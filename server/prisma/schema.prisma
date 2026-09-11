@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  passwordHash String   @map("password_hash")
+  nickname     String?
+  avatar       String?
+  phone        String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String
+  icon      String?
+  sort      Int       @default(0)
+  products  Product[]
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@map("categories")
+}
+
+model Product {
+  id            Int      @id @default(autoincrement())
+  title         String
+  price         Decimal  @db.Decimal(10, 2)
+  originalPrice Decimal? @db.Decimal(10, 2) @map("original_price")
+  cover         String
+  images        String[]
+  description   String?  @db.Text
+  sales         Int      @default(0)
+  stock         Int      @default(0)
+  status        Int      @default(1)
+  categoryId    Int      @map("category_id")
+  category      Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([categoryId])
+  @@map("products")
+}
+
+model Banner {
+  id        Int      @id @default(autoincrement())
+  image     String
+  link      String?
+  sort      Int      @default(0)
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("banners")
+}
