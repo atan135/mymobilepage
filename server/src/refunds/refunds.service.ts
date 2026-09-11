@@ -31,6 +31,9 @@ export class RefundsService {
       )
     }
 
+    // 先 findUnique 预校验, 给出更友好的 4xx 错误；
+    // DB 上 orderId 已有 @unique 约束, 即使并发请求都通过预校验,
+    // 后到的 create 也会触发 Prisma P2002, 此处统一捕获并转译为 BadRequest。
     const existing = await this.prisma.refundRequest.findUnique({
       where: { orderId: dto.orderId }
     })
@@ -38,14 +41,21 @@ export class RefundsService {
       throw new BadRequestException('该订单已存在退款申请')
     }
 
-    return this.prisma.refundRequest.create({
-      data: {
-        orderId: dto.orderId,
-        reason: dto.reason,
-        amount: new Prisma.Decimal(dto.amount.toFixed(2)),
-        status: 0
+    try {
+      return await this.prisma.refundRequest.create({
+        data: {
+          orderId: dto.orderId,
+          reason: dto.reason,
+          amount: new Prisma.Decimal(dto.amount.toFixed(2)),
+          status: 0
+        }
+      })
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        throw new BadRequestException('该订单已存在退款申请')
       }
-    })
+      throw e
+    }
   }
 
   async listMy(
