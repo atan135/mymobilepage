@@ -44,7 +44,8 @@ const menuItems = computed<MenuItem[]>(() => [
   { path: '/orders', title: '订单管理', icon: 'List', permission: 'order:list' },
   { path: '/banners', title: '轮播图管理', icon: 'Picture', permission: 'banner:list' },
   { path: '/announcements', title: '首页公告', icon: 'Bell', permission: 'announcement:list' },
-  { path: '/coupons', title: '优惠券管理', icon: 'Discount', permission: 'coupon:list' }, 
+  { path: '/coupons', title: '优惠券管理', icon: 'Discount', permission: 'coupon:list' },
+  { path: '/reviews', title: '评价管理', icon: 'ChatDotRound', permission: 'review:list' },
   { path: '/refunds', title: '退款审批', icon: 'Refresh', permission: 'refund:list' }
 ])
 

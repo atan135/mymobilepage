@@ -47,6 +47,18 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '订单管理', icon: 'List', permission: 'order:list' }
       },
       {
+        path: 'reviews',
+        name: 'admin-reviews',
+        component: () => import('../views/ReviewListView.vue'),
+        meta: { title: '评价管理', icon: 'ChatDotRound', permission: 'review:list' }
+      },
+      {
+        path: 'reviews/:id',
+        name: 'admin-review-detail',
+        component: () => import('../views/ReviewDetailView.vue'),
+        meta: { title: '评价详情', icon: 'ChatDotRound', permission: 'review:detail' }
+      },
+      {
         path: 'refunds',
         name: 'admin-refunds',
         component: () => import('../views/RefundListView.vue'),
