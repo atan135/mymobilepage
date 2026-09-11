@@ -15,6 +15,7 @@ import { AdminOrdersModule } from './admin-orders/admin-orders.module'
 import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module'
 import { ClientBannersModule } from './client-banners/client-banners.module'
 import { ClientOrdersModule } from './client-orders/client-orders.module'
+import { CouponsModule } from './coupons/coupons.module'
 
 @Module({
   imports: [
@@ -33,7 +34,8 @@ import { ClientOrdersModule } from './client-orders/client-orders.module'
     AdminOrdersModule,
     AdminDashboardModule,
     ClientBannersModule,
-    ClientOrdersModule
+    ClientOrdersModule,
+    CouponsModule
   ]
 })
 export class AppModule {}

@@ -53,6 +53,15 @@ export class CreateOrderDto {
   @IsString()
   @MaxLength(200)
   remark?: string
+
+  /**
+   * 可选：使用 UserCoupon.id（不是 coupons.id，是 user_coupons.id）。
+   * 服务端会校验归属 + 未使用 + 未过期，并按 coupon.type 计算折扣。
+   */
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  couponId?: number
 }
 
 export class QueryMyOrderDto {

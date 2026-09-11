@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common'
 import { PassportModule } from '@nestjs/passport'
 import { AuthModule } from '../auth/auth.module'
-import { ClientOrdersService } from './client-orders.service'
+import { CouponsModule } from '../coupons/coupons.module'
 import { ClientOrdersController } from './client-orders.controller'
+import { ClientOrdersService } from './client-orders.service'
 
 /**
  * 客户端订单模块。
@@ -13,9 +14,16 @@ import { ClientOrdersController } from './client-orders.controller'
  * Nest 在 import 链上按 export 过滤时看不到 AuthModuleOptions，
  * 所以需要在本模块再 import 一次 PassportModule.register({ defaultStrategy: 'jwt' })，
  * 让 JwtAuthGuard 在 ClientOrdersModule 的 injector 里能解析到该依赖。
+ *
+ * 优惠券核销复用 CouponsService（resolveDiscount / 退券），
+ * 所以这里把 CouponsModule 也 import 进来。
  */
 @Module({
-  imports: [AuthModule, PassportModule.register({ defaultStrategy: 'jwt' })],
+  imports: [
+    AuthModule,
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    CouponsModule
+  ],
   providers: [ClientOrdersService],
   controllers: [ClientOrdersController]
 })
