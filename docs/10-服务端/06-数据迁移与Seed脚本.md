@@ -23,7 +23,7 @@ npm run prisma:seed
 > `prisma:seed` 在 `server/package.json` 里配置：
 > ```json
 > "prisma": {
->   "seed": "ts-node prisma/seed.ts"
+>   "seed": "tsx prisma/seed.ts"
 > }
 > ```
 
@@ -31,10 +31,17 @@ npm run prisma:seed
 
 路径：`server/prisma/migrations/`
 
-| 迁移名 | 时间戳 | 内容 |
-| --- | --- | --- |
-| `init` | `20260911055156` | 初始：`users`、`categories`、`products`、`banners` |
-| `phase1_admin_and_orders` | `20260911063637` | Phase 1 增量：`admin_users`、`admin_roles`、`announcements`、`orders`、`order_items`、`refund_requests` |
+| 迁移名 | 时间戳 | 阶段 | 内容 |
+| --- | --- | --- | --- |
+| `init` | `20260911055156` | 初始 | `users` / `categories` / `products` / `banners` |
+| `phase1_admin_and_orders` | `20260911063637` | Phase 1 | `admin_users` / `admin_roles` / `announcements` / `orders` / `order_items` / `refund_requests` |
+| `phase2_coupons` | `20260911120815` | Phase 2 | `orders` 加 `original_amount` / `discount_amount`；新增 `coupons` / `user_coupons` |
+| `phase2_reviews` | `20260911125900` | Phase 2 | 新增 `reviews` |
+| `phase2_inventory` | `20260911132309` | Phase 2 | `products` 加 `threshold`；新增 `inventory_logs` |
+| `phase2_audit_logs` | `20260911134947` | Phase 2 | 新增 `audit_logs` |
+| `phase2_settings` | `20260911143048` | Phase 2 | 新增 `settings` |
+| `phase2_add_refunded_at` | `20260912000000` | Phase 2 | `orders` 加 `refunded_at` |
+| `phase2_add_review_order_id` | `20260912000001` | Phase 2 | `reviews` 加 `order_id` |
 
 迁移命名约定：`<时间戳>_<简述>`。Prisma 自动按时间戳升序应用。
 
@@ -56,18 +63,19 @@ npm run prisma:seed
 1. **清理业务表**（按外键依赖顺序）
    ```
    refund_requests → order_items → orders
-   → announcements → banners → products → categories
+   → announcements → banners → reviews → products → categories
    → users → admin_users → admin_roles
    ```
 2. **写入分类**：6 个固定分类（手机数码 / 服饰鞋包 / 美妆个护 / 家居生活 / 食品生鲜 / 运动户外）
-3. **写入商品**：每个分类 4 个商品，共 24 个。图片用 `picsum.photos` 随机图，价格递增，库存递减
+3. **写入商品**：每个分类 4 个商品，共 24 个。图片用 `picsum.photos` 随机图，价格递增，库存递减。最后 3 个商品阈值设 90，演示预警
 4. **写入用户**：5 个用户（`alice` / `bob` / `carol` / `dave` / `eve`），密码统一 `user123`
 5. **写入轮播图**：3 张，链到 `/home`
-6. **写入订单**：10 单，分布在最近 0~8 天，覆盖全部状态（0~3）
-7. **写入后台角色**：`SUPER_ADMIN`（权限 `['*']`）+ `ADMIN`（详细权限码）
-8. **写入后台账号**：`admin` + `operator`，密码统一 `admin123`
-
-完成后打印统计 + 默认账号。
+6. **写入订单**：10 单，分布在最近 0~8 天，覆盖 status 0/1/2/3
+7. **写入评价**：11 条，覆盖 status 0/1/2、1~5 星、部分带图、部分带商家回复
+8. **写入后台角色**：`SUPER_ADMIN`（权限 `['*']`）+ `ADMIN`（41 条权限码）
+9. **写入后台账号**：`admin` + `operator`，密码统一 `admin123`
+10. **写入审计日志**：14 条 demo（login / create / update / approve / refund / block / grant / ship / delete）
+11. **写入系统设置**：12 条 KV（site / customer_service / payment / shipping 四组）
 
 ## 4. 默认账号清单
 
@@ -106,7 +114,13 @@ banner:list, banner:create, banner:edit
 announcement:list, announcement:create, announcement:edit
 ```
 
-> 故意**不包含**：`user:edit`、`category:delete`、`product:delete`、`banner:delete`、`announcement:publish`、`announcement:delete`、`order:cancel`。这些敏感操作仅 `SUPER_ADMIN` 可做。
+> **不在 ADMIN 权限集合中**（仅 `SUPER_ADMIN` 通过 `*` 通配可访问）：
+`user:edit`、`category:delete`、`product:delete`、`banner:delete`、`announcement:publish`、`announcement:delete`、`order:cancel`。
+
+> 注意：这 7 个权限码在 `server/src/admin-auth/types.ts` 中声明、对应 controller 上有 `@RequirePermission()`，但 seed 没分配给 ADMIN。这是 known issue：前端按钮的 `v-permission` 会自动隐藏，但若绕过指令直接调接口会被 `PermissionsGuard` 拦截。
+
+**ADMIN 实际持有、但文档早期版本未列出的敏感操作**：
+`coupon:delete`、`coupon:grant`、`refund:approve`、`refund:reject`、`refund:refund`。
 >
 > 实际后台路由上：当前阶段部分删除 / 状态变更接口**未全部实现**（如无 `banner:delete` 路由），所以 ADMIN 角色权限码与路由权限码之间存在轻微不对齐；详见 `20-管理后台/02-账号权限与登录.md`。
 
