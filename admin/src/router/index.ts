@@ -57,6 +57,18 @@ const routes: RouteRecordRaw[] = [
         name: 'admin-announcements',
         component: () => import('../views/AnnouncementListView.vue'),
         meta: { title: '首页公告', icon: 'Bell', permission: 'announcement:list' }
+      },
+      {
+        path: 'coupons',
+        name: 'admin-coupons',
+        component: () => import('../views/CouponListView.vue'),
+        meta: { title: '优惠券管理', icon: 'Discount', permission: 'coupon:list' }
+      },
+      {
+        path: 'coupons/:id/claims',
+        name: 'admin-coupon-claims',
+        component: () => import('../views/CouponClaimsView.vue'),
+        meta: { title: '领取明细', icon: 'Discount', permission: 'coupon:list' }
       }
     ]
   },
@@ -94,3 +106,4 @@ router.beforeEach((to) => {
 })
 
 export default router
+

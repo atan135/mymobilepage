@@ -13,6 +13,7 @@ import { AdminBannersModule } from './admin-banners/admin-banners.module'
 import { AdminAnnouncementsModule } from './admin-announcements/admin-announcements.module'
 import { AdminOrdersModule } from './admin-orders/admin-orders.module'
 import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module'
+import { AdminCouponsModule } from './admin-coupons/admin-coupons.module'
 import { ClientBannersModule } from './client-banners/client-banners.module'
 import { ClientOrdersModule } from './client-orders/client-orders.module'
 import { CouponsModule } from './coupons/coupons.module'
@@ -33,6 +34,7 @@ import { CouponsModule } from './coupons/coupons.module'
     AdminAnnouncementsModule,
     AdminOrdersModule,
     AdminDashboardModule,
+    AdminCouponsModule,
     ClientBannersModule,
     ClientOrdersModule,
     CouponsModule

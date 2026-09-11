@@ -43,7 +43,8 @@ const menuItems = computed<MenuItem[]>(() => [
   { path: '/products', title: '商品管理', icon: 'Goods', permission: 'product:list' },
   { path: '/orders', title: '订单管理', icon: 'List', permission: 'order:list' },
   { path: '/banners', title: '轮播图管理', icon: 'Picture', permission: 'banner:list' },
-  { path: '/announcements', title: '首页公告', icon: 'Bell', permission: 'announcement:list' }
+  { path: '/announcements', title: '首页公告', icon: 'Bell', permission: 'announcement:list' },
+  { path: '/coupons', title: '优惠券管理', icon: 'Discount', permission: 'coupon:list' }
 ])
 
 const breadcrumb = computed(() => {

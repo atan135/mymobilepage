@@ -24,7 +24,9 @@ const ADMIN_PERMISSIONS = [
   'category:list', 'category:create', 'category:edit',
   'order:list', 'order:detail', 'order:ship',
   'banner:list', 'banner:create', 'banner:edit',
-  'announcement:list', 'announcement:create', 'announcement:edit'
+  'announcement:list', 'announcement:create', 'announcement:edit',
+  'coupon:list', 'coupon:create', 'coupon:edit',
+  'coupon:on_off', 'coupon:delete', 'coupon:grant'
 ]
 
 const seedUsers = [
@@ -219,3 +221,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect()
   })
+
