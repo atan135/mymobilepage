@@ -209,10 +209,21 @@
 
 ### 2.7 系统设置
 
-- [ ] **Prisma 新表** `Setting`：`id / key / value(JSON) / description / updatedAt`
-- [ ] **Server** `SettingsModule`：`GET / PUT /api/admin/settings`
-- [ ] **Admin** `SettingsView`：分组表单（站点信息 / 客服 / 支付 / 运费模板）
-- [ ] 客户端首页 / 商品详情等需要读取设置的地方，按 key 取值（可选）
+- [x] **Prisma 新表** `Setting`：`id / key / value(JSON) / description / updatedAt`
+- [x] **Server** `SettingsModule`：`GET / PUT /api/admin/settings`
+- [x] **Admin** `SettingsView`：分组表单（站点信息 / 客服 / 支付 / 运费模板）
+- [x] 客户端首页 / 商品详情等需要读取设置的地方，按 key 取值（可选）
+
+> 实现要点：
+> - migration `20260911143048_phase2_settings` 已应用；`settings` 表 + `group` 列 + `@@index([group])`
+> - 后台：`GET /api/admin/settings` + `PUT /api/admin/settings { updates: [...] }`（批量 upsert，单事务）
+> - 客户端：`GET /api/client/settings?keys=...` 公共读（`@Public`），白名单仅 `site_*` / `customer_service_*` 前缀
+> - 4 组表单 + 批量保存：每个 tab 一组表单 + 一个「保存」按钮，一次性批量 PUT
+> - 表单控件：字符串 / textarea / el-input-number / checkbox-group / 多行 split 数组
+> - seed 写 12 条 demo，覆盖 site / customer_service / payment / shipping 4 个 group
+> - 客户端集成（roadmap 标为可选）：HomeView 顶部 `site_name` 替换默认标题 + 底部加客服电话卡
+> - 权限码：`setting:edit`（复用 types.ts 占位）
+> - 所有 PUT 会自动被 AuditInterceptor 记录（无需额外埋点）
 
 ### 2.8 Phase 2 完成定义
 
