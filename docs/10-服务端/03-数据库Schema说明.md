@@ -6,7 +6,7 @@
 
 数据库：PostgreSQL（`provider = "postgresql"`）。
 
-Phase 1 完成后共 **10 张表**：
+Phase 1 + Phase 2 完成后共 **16 张表**：
 
 | 表 | 中文 | 来源 |
 | --- | --- | --- |
@@ -19,7 +19,13 @@ Phase 1 完成后共 **10 张表**：
 | `announcements` | 公告 | Phase 1 增量 |
 | `orders` | 订单 | Phase 1 增量 |
 | `order_items` | 订单商品快照 | Phase 1 增量 |
-| `refund_requests` | 退款申请 | Phase 1 增量（先建表，UI 在 Phase 2） |
+| `refund_requests` | 退款申请 | Phase 1 增量 |
+| `coupons` | 优惠券 | Phase 2 |
+| `user_coupons` | 用户领取的券 | Phase 2 |
+| `reviews` | 商品评价 | Phase 2 |
+| `inventory_logs` | 库存变更流水 | Phase 2 |
+| `audit_logs` | 后台操作审计 | Phase 2 |
+| `settings` | 系统设置 KV | Phase 2 |
 
 ## 2. ER 关系图
 
@@ -199,6 +205,7 @@ erDiagram
 | `description` | `Text?` | 富文本 |
 | `sales` | int | 累计销量；下单时 `+quantity` |
 | `stock` | int | 库存；下单时 `-quantity` |
+| `threshold` | int | 库存预警阈值，默认 10；进入 `/inventory/warnings` 列表时 `stock <= threshold` |
 | `status` | int | `1` 上架 / `0` 下架；下单时校验 |
 | `categoryId` | int FK → `categories.id` | `onDelete: Restrict`（有商品时禁止删分类） |
 
@@ -226,10 +233,11 @@ erDiagram
 | `orderNo` | string UK | 时间戳 + 随机后缀（`ClientOrdersService.generateOrderNo`） |
 | `status` | int | 见下方状态枚举 |
 | `receiver` | `Json` | `{ name, phone, address }` |
-| `paidAt` / `shippedAt` / `completedAt` / `cancelledAt` | datetime? | 状态流转时自动写入 |
+| `paidAt` / `shippedAt` / `completedAt` / `cancelledAt` / `refundedAt` | datetime? | 状态流转时自动写入 |
+| `originalAmount` / `discountAmount` | `Decimal(10,2)?` | 优惠券核销时写入；`totalAmount` = `originalAmount` - `discountAmount` |
 | `shipCompany` / `shipNo` | string? | 发货时填入 |
 
-订单状态枚举：
+订单状态枚举（含状态 5 REFUNDED，由 `AdminRefundsService.markRefunded` 写入）：
 
 | code | 含义 |
 | --- | --- |
@@ -238,6 +246,7 @@ erDiagram
 | `2` SHIPPED | 已发货 / 待收货 |
 | `3` COMPLETED | 已完成 |
 | `4` CANCELLED | 已取消 |
+| `5` REFUNDED | 已退款（markRefunded 触发，配套 `refunded_at`） |
 
 > 索引：`@@index([userId])`、`@@index([status])`
 
@@ -260,17 +269,37 @@ erDiagram
 | `orderId` | int UK, FK → `orders.id` | 一个订单最多一次退款申请 |
 | `reason` | string | 退款原因 |
 | `amount` | decimal | 退款金额（可与 `totalAmount` 不同） |
-| `status` | int | `0` 待审 / `1` 已批准 / `2` 已拒绝 / `3` 已退款（Phase 2 UI） |
+| `status` | int | `0` 待审 / `1` 已批准 / `2` 已拒绝 / `3` 已退款 |
 | `onDelete: Cascade` | | 订单删 → 退款申请一起删 |
+
+退款状态机（`server/src/admin-refunds/dto/refund.dto.ts`）：
+
+```ts
+export const REFUND_TRANSITIONS: Record<RefundStatus, RefundStatus[]> = {
+  0: [1, 2],   // PENDING  → APPROVED / REJECTED
+  1: [3],      // APPROVED → REFUNDED
+  2: [],       // REJECTED (终态)
+  3: []        // REFUNDED (终态)
+}
+```
+
+`markRefunded` 在事务内还原商品库存 + 退回关联优惠券 + 写 `orders.status=5 + refunded_at`。
 
 ## 4. 迁移历史
 
 `server/prisma/migrations/`
 
-| 文件夹 | 迁移名 | 内容 |
-| --- | --- | --- |
-| `20260911055156_init/` | `init` | 初始：`users`、`categories`、`products`、`banners` |
-| `20260911063637_phase1_admin_and_orders/` | `phase1_admin_and_orders` | Phase 1 增量：`admin_users`、`admin_roles`、`announcements`、`orders`、`order_items`、`refund_requests` |
+| 文件夹 | 迁移名 | 阶段 | 内容 |
+| --- | --- | --- | --- |
+| `20260911055156_init/` | `init` | 初始 | `users` / `categories` / `products` / `banners` |
+| `20260911063637_phase1_admin_and_orders/` | `phase1_admin_and_orders` | Phase 1 | `admin_users` / `admin_roles` / `announcements` / `orders` / `order_items` / `refund_requests` |
+| `20260911120815_phase2_coupons/` | `phase2_coupons` | Phase 2 | `orders` 加 `original_amount` / `discount_amount`；新增 `coupons` / `user_coupons` |
+| `20260911125900_phase2_reviews/` | `phase2_reviews` | Phase 2 | 新增 `reviews` |
+| `20260911132309_phase2_inventory/` | `phase2_inventory` | Phase 2 | `products` 加 `threshold`；新增 `inventory_logs` |
+| `20260911134947_phase2_audit_logs/` | `phase2_audit_logs` | Phase 2 | 新增 `audit_logs` |
+| `20260911143048_phase2_settings/` | `phase2_settings` | Phase 2 | 新增 `settings` |
+| `20260912000000_phase2_add_refunded_at/` | `phase2_add_refunded_at` | Phase 2 | `orders` 加 `refunded_at` |
+| `20260912000001_phase2_add_review_order_id/` | `phase2_add_review_order_id` | Phase 2 | `reviews` 加 `order_id` |
 
 迁移命名约定：`<时间戳>_<简述>`，时间戳由 Prisma 自动生成（YYYYMMDDhhmmss）。
 
