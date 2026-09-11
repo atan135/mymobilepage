@@ -4,9 +4,11 @@ import {
   Injectable,
   NestInterceptor
 } from '@nestjs/common'
+import { Reflector } from '@nestjs/core'
 import { Observable, tap } from 'rxjs'
 import type { Request } from 'express'
 import { AuditService } from './audit.service'
+import { PERMISSIONS_KEY } from '../admin-auth/decorators/require-permission.decorator'
 
 /**
  * 需要写审计的 HTTP 方法。
@@ -110,7 +112,23 @@ function pickIp(req: Request): string | null {
 
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
-  constructor(private readonly audit: AuditService) {}
+  constructor(
+    private readonly audit: AuditService,
+    private readonly reflector: Reflector
+  ) {}
+
+  /**
+   * 从 @RequirePermission 元数据读取权限码，优先用其作为 action，
+   * 保证 audit_log.action 与权限系统一致；解析不到时退回 URL 推断。
+   */
+  private resolveAction(ctx: ExecutionContext, fallback: string): string {
+    const perms = this.reflector.getAllAndOverride<string[] | undefined>(
+      PERMISSIONS_KEY,
+      [ctx.getHandler(), ctx.getClass()]
+    )
+    if (perms && perms.length > 0) return perms[0]
+    return fallback
+  }
 
   intercept(ctx: ExecutionContext, next: CallHandler): Observable<unknown> {
     const req = ctx.switchToHttp().getRequest<Request & {
@@ -120,7 +138,8 @@ export class AuditInterceptor implements NestInterceptor {
     const method = req.method
     if (!WRITE_METHODS.has(method)) return next.handle()
 
-    const meta = parseUrl(req.originalUrl ?? req.url, method)
+    const parsed = parseUrl(req.originalUrl ?? req.url, method)
+    const meta = { ...parsed, action: this.resolveAction(ctx, parsed.action) }
     const adminId = req.user?.sub ?? null
     const ip = pickIp(req)
     const userAgent =
