@@ -53,6 +53,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '评价管理', icon: 'ChatDotRound', permission: 'review:list' }
       },
       {
+        path: 'settings',
+        name: 'admin-settings',
+        component: () => import('../views/SettingsView.vue'),
+        meta: { title: '系统设置', icon: 'Setting', permission: 'setting:edit' }
+      },
+            {
         path: 'audit-logs',
         name: 'admin-audit-logs',
         component: () => import('../views/AuditLogListView.vue'),
