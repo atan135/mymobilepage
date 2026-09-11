@@ -2,10 +2,11 @@
   "name": "mymobilepage",
   "version": "0.1.0",
   "private": true,
-  "description": "Monorepo: client (Vue 3 + Vant mobile web), admin (TBD), server (NestJS + PostgreSQL).",
+  "description": "Monorepo: client (Vue 3 + Vant mobile), admin (Vue 3 + Element Plus), server (NestJS + Prisma + PostgreSQL).",
   "workspaces": [
     "client",
-    "server"
+    "server",
+    "admin"
   ],
   "scripts": {
     "dev:client": "npm run dev -w client",
@@ -16,9 +17,14 @@
     "build:server": "npm run build -w server",
     "start:server": "npm run start:prod -w server",
     "type-check:server": "npm run type-check -w server",
+    "dev:admin": "npm run dev -w admin",
+    "build:admin": "npm run build -w admin",
+    "preview:admin": "npm run preview -w admin",
+    "type-check:admin": "npm run type-check -w admin",
     "prisma:migrate": "npm run prisma:migrate -w server",
     "prisma:studio": "npm run prisma:studio -w server",
-    "prisma:generate": "npm run prisma:generate -w server"
+    "prisma:generate": "npm run prisma:generate -w server",
+    "prisma:seed": "npm run prisma:seed -w server"
   },
   "engines": {
     "node": ">=20"

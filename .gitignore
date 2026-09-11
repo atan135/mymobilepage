@@ -43,3 +43,17 @@ server/node_modules/
 # Prisma generated artifacts (client lives under node_modules so OK to ignore)
 server/prisma/*.db
 server/prisma/*.db-journal
+
+# Admin
+admin/dist/
+admin/.env
+admin/.env.*.local
+admin/*.tsbuildinfo
+admin/node_modules/
+admin/src/types/components.d.ts
+admin/src/types/auto-imports.d.ts
+
+admin/vite.config.d.ts
+admin/vite.config.js
+admin/vite.config.*.d.ts
+admin/vite.config.*.js
