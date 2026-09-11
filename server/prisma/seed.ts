@@ -221,7 +221,7 @@ async function main(): Promise<void> {
 
   console.log('Seeding admin users...')
   const superPwd = await bcrypt.hash('admin123', 10)
-  await prisma.adminUser.create({
+  const adminSuper = await prisma.adminUser.create({
     data: {
       username: 'admin',
       passwordHash: superPwd,
@@ -230,7 +230,7 @@ async function main(): Promise<void> {
     }
   })
   const adminPwd = await bcrypt.hash('admin123', 10)
-  await prisma.adminUser.create({
+  const adminOperator = await prisma.adminUser.create({
     data: {
       username: 'operator',
       passwordHash: adminPwd,
@@ -239,13 +239,58 @@ async function main(): Promise<void> {
     }
   })
 
-  const counts = {
+  console.log('Seeding audit logs...')
+  const now2 = Date.now()
+  const minute = 60 * 1000
+  const auditTemplates: Array<{
+    minutesAgo: number
+    adminId: number
+    action: string
+    resource: string
+    resourceId: number | null
+    payload: Record<string, unknown> | null
+    ip: string
+  }> = [
+    { minutesAgo: 5, adminId: adminSuper.id, action: 'login', resource: 'auth', resourceId: null, payload: { username: 'admin' }, ip: '127.0.0.1' },
+    { minutesAgo: 7, adminId: adminOperator.id, action: 'login', resource: 'auth', resourceId: null, payload: { username: 'operator' }, ip: '127.0.0.1' },
+    { minutesAgo: 12, adminId: adminOperator.id, action: 'create', resource: 'coupons', resourceId: 101, payload: { name: '新人立减券', type: 3, amount: 10 }, ip: '127.0.0.1' },
+    { minutesAgo: 18, adminId: adminOperator.id, action: 'update', resource: 'coupons', resourceId: 101, payload: { status: 0 }, ip: '127.0.0.1' },
+    { minutesAgo: 25, adminId: adminOperator.id, action: 'create', resource: 'banners', resourceId: 5, payload: { image: 'https://picsum.photos/seed/banner-x/750/300', link: '/home' }, ip: '127.0.0.1' },
+    { minutesAgo: 30, adminId: adminSuper.id, action: 'update', resource: 'products', resourceId: 110, payload: { stock: 80 }, ip: '127.0.0.1' },
+    { minutesAgo: 42, adminId: adminOperator.id, action: 'approve', resource: 'refunds', resourceId: 1, payload: null, ip: '127.0.0.1' },
+    { minutesAgo: 55, adminId: adminOperator.id, action: 'refund', resource: 'refunds', resourceId: 1, payload: null, ip: '127.0.0.1' },
+    { minutesAgo: 70, adminId: adminOperator.id, action: 'approve', resource: 'reviews', resourceId: 30, payload: null, ip: '127.0.0.1' },
+    { minutesAgo: 90, adminId: adminOperator.id, action: 'block', resource: 'reviews', resourceId: 31, payload: null, ip: '127.0.0.1' },
+    { minutesAgo: 120, adminId: adminSuper.id, action: 'update', resource: 'products', resourceId: 120, payload: { threshold: 80 }, ip: '127.0.0.1' },
+    { minutesAgo: 180, adminId: adminOperator.id, action: 'grant', resource: 'coupons', resourceId: 101, payload: { userIds: [1, 2, 3] }, ip: '127.0.0.1' },
+    { minutesAgo: 240, adminId: adminOperator.id, action: 'ship', resource: 'orders', resourceId: 42, payload: { shipCompany: '顺丰速运', shipNo: 'SF1000042' }, ip: '127.0.0.1' },
+    { minutesAgo: 360, adminId: adminOperator.id, action: 'delete', resource: 'announcements', resourceId: 8, payload: null, ip: '127.0.0.1' }
+  ]
+  let auditCount = 0
+  for (const t of auditTemplates) {
+    await prisma.auditLog.create({
+      data: {
+        adminId: t.adminId,
+        action: t.action,
+        resource: t.resource,
+        resourceId: t.resourceId,
+        payload: t.payload as never,
+        ip: t.ip,
+        userAgent: 'Mozilla/5.0 (demo seed)',
+        createdAt: new Date(now2 - t.minutesAgo * minute)
+      }
+    })
+    auditCount++
+  }
+  console.log(`  -> inserted ${auditCount} audit logs`)
+    const counts = {
     users: await prisma.user.count(),
     categories: await prisma.category.count(),
     products: await prisma.product.count(),
     banners: await prisma.banner.count(),
     orders: await prisma.order.count(),
     reviews: reviewCount,
+    auditLogs: auditCount,
     roles: await prisma.role.count(),
     adminUsers: await prisma.adminUser.count()
   }
