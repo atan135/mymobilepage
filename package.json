@@ -1,0 +1,18 @@
+{
+  "name": "mymobilepage",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Monorepo: client (Vue 3 + Vant mobile web), admin (TBD), server (NestJS TBD).",
+  "workspaces": [
+    "client"
+  ],
+  "scripts": {
+    "dev:client": "npm run dev -w client",
+    "build:client": "npm run build -w client",
+    "preview:client": "npm run preview -w client",
+    "type-check:client": "npm run type-check -w client"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
