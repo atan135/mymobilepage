@@ -8,11 +8,11 @@
 
 | 端 | 目录 | 端口 | 技术栈 |
 | --- | --- | --- | --- |
-| 移动端 H5 商城 | `client/` | 5173 | Vue 3.5 + Vant 5 + Pinia + ofetch |
+| 移动端 H5 商城 | `client/` | 5173 | Vue 3.5 + Vant 4 + Pinia + ofetch |
 | 管理后台 | `admin/` | 5174 | Vue 3.5 + Element Plus + Pinia + ECharts |
 | 服务端 | `server/` | 3000 | NestJS 12 + Prisma 6 + PostgreSQL |
 
-当前阶段：Phase 1 完成（详见 `summary/admin-roadmap.md`）；Phase 2 模块位置已预留。
+当前阶段：Phase 1 + Phase 2 全部完成（详见 `summary/admin-roadmap.md`）；Phase 2 模块位置已预留。
 
 ## 2. 完整文档入口（必读）
 
@@ -85,9 +85,9 @@ npm run build:{client,admin,server}
 | 4 | `DELETE /api/admin/products/:id` | 已挂 `@RequirePermission('product:delete')`，不是无权限 |
 | 5 | APP_GUARD 注册 | `PermissionsGuard` 已通过 `APP_GUARD` provider 全局生效，不要再加 `useGlobalGuards` |
 | 6 | 后台菜单显示 | `admin/src/layouts/AdminLayout.vue` 的 `menuItems` 与路由 `meta.permission` 同步，否则菜单看不到 |
-| 7 | 主题色覆盖 | `admin/src/styles/main.css` 已在 `:root` + `:root[data-theme="dark"]` 完成 Element Plus 变量覆盖，**不要**再说"未做" |
-| 8 | 客户端 mock 注释 | `client/src/api/request.ts` 中的「所有接口走本地 mock」注释已过时；当前**所有 api 已切真实调用**，`delay()` 是死代码 |
-| 9 | 客户端登录页底部文案 | 「演示版：任意非空用户名 / 密码均可登录」已过时，会走真实 bcrypt 校验 |
+| 7 | 主题色覆盖 | `admin/src/styles/main.css` 在 `:root` 显式声明 `--el-color-primary` 等品牌主色；`:root[data-theme="dark"]` 仅重写 `--app-*` 自有变量；Element Plus 暗色由其内置 `.dark` 类提供，无需重复声明 |
+| 8 | 客户端 mock 注释 | 已清理：`client/src/api/request.ts` 头部 mock 说明块 + 未使用的 `delay()` 导出已删除 |
+| 9 | 客户端登录页底部文案 | 已清理：client/src/views/LoginView.vue 的 .hint div + 对应 .hint CSS 样式已删除 |
 
 完整 FAQ：`docs/00-总览与入门/04-开发约定与常见问题.md`。
 
@@ -128,3 +128,4 @@ npm run build:{client,admin,server}
 - 后台路由菜单权限对应：`docs/20-管理后台/02-账号权限与登录.md`
 - 默认账号清单：`docs/10-服务端/06-数据迁移与Seed脚本.md` 第 4 节
 - Phase 1 整体完成态：`summary/admin-roadmap.md`
+
