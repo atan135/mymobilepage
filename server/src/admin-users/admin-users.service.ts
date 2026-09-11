@@ -47,7 +47,10 @@ export class AdminUsersService {
   }
 
   async findOne(id: number) {
-    const user = await this.prisma.user.findUnique({ where: { id } })
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: { _count: { select: { orders: true } } }
+    })
     if (!user) throw new NotFoundException('用户不存在')
     const { passwordHash: _, ...safe } = user
     return safe

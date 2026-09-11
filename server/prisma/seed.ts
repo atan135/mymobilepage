@@ -27,6 +27,14 @@ const ADMIN_PERMISSIONS = [
   'announcement:list', 'announcement:create', 'announcement:edit'
 ]
 
+const seedUsers = [
+  { username: 'alice', nickname: '小爱', phone: '13800000001' },
+  { username: 'bob', nickname: '阿波', phone: '13800000002' },
+  { username: 'carol', nickname: '小卡', phone: '13800000003' },
+  { username: 'dave', nickname: '老戴', phone: '13800000004' },
+  { username: 'eve', nickname: '伊芙', phone: '13800000005' }
+]
+
 async function main(): Promise<void> {
   console.log('Cleaning transactional data (categories / products / banners / announcements / orders)...')
   await prisma.refundRequest.deleteMany()
@@ -36,6 +44,10 @@ async function main(): Promise<void> {
   await prisma.banner.deleteMany()
   await prisma.product.deleteMany()
   await prisma.category.deleteMany()
+
+  console.log('Cleaning users...')
+  await prisma.user.deleteMany()
+
   console.log('Cleaning admin users / roles...')
   await prisma.adminUser.deleteMany()
   await prisma.role.deleteMany()
@@ -56,14 +68,23 @@ async function main(): Promise<void> {
       originalPrice: Number((39.9 + i * 9.3).toFixed(2)),
       cover: cover(seed),
       images: [cover(seed), cover(`p${i + 10}`), cover(`p${i + 20}`)],
-      description:
-        '这是一段商品介绍，描述商品的核心卖点、规格参数与适用场景，帮助你快速了解商品。',
+      description: '这是一段商品介绍，描述商品的核心卖点、规格参数与适用场景，帮助你快速了解商品。',
       sales: 100 + i * 31,
       stock: 100 - i,
       categoryId: category.id
     })
   }
-  await prisma.product.createMany({ data: products })
+  const createdProducts = await Promise.all(
+    products.map((p) => prisma.product.create({ data: p }))
+  )
+
+  console.log(`Seeding users (${seedUsers.length})...`)
+  const userPwd = await bcrypt.hash('user123', 10)
+  const createdUsers = await Promise.all(
+    seedUsers.map((u) =>
+      prisma.user.create({ data: { ...u, passwordHash: userPwd } })
+    )
+  )
 
   console.log('Seeding banners...')
   await prisma.banner.createMany({
@@ -73,6 +94,69 @@ async function main(): Promise<void> {
       { image: 'https://picsum.photos/seed/banner3/750/300', link: '/home', sort: 3 }
     ]
   })
+
+  console.log('Seeding orders (10 spread across statuses + dates)...')
+  const now = Date.now()
+  const day = 24 * 60 * 60 * 1000
+  const orderTemplates = [
+    { dAgo: 0, status: 1, qty: 2, items: [0, 3] }, // 今日 已付款
+    { dAgo: 0, status: 2, qty: 1, items: [1] },    // 今日 已发货
+    { dAgo: 0, status: 3, qty: 1, items: [5] },    // 今日 已完成
+    { dAgo: 0, status: 0, qty: 1, items: [7] },    // 今日 待付款（KPI 待处理订单）
+    { dAgo: 0, status: 0, qty: 2, items: [10, 11] }, // 今日 待付款
+    { dAgo: 1, status: 3, qty: 1, items: [2] },    // 昨日 已完成
+    { dAgo: 2, status: 3, qty: 2, items: [4, 8] }, // 2 天前
+    { dAgo: 4, status: 1, qty: 1, items: [6] },    // 4 天前
+    { dAgo: 6, status: 3, qty: 1, items: [9] },    // 6 天前
+    { dAgo: 8, status: 3, qty: 2, items: [12, 14] } // 8 天前
+  ]
+  for (let i = 0; i < orderTemplates.length; i++) {
+    const t = orderTemplates[i]
+    const user = createdUsers[i % createdUsers.length]
+    const orderNo = `${Date.now().toString(36)}${(i + 1).toString().padStart(3, '0')}`.toUpperCase()
+    const createdAt = new Date(now - t.dAgo * day - 60 * 60 * 1000)
+    const items = t.items.map((idx) => {
+      const p = createdProducts[idx % createdProducts.length]
+      return {
+        productId: p.id,
+        productTitle: p.title,
+        productCover: p.cover,
+        price: Number(p.price),
+        quantity: 1
+      }
+    })
+    const total = items.reduce((s, it) => s + it.price * it.quantity, 0)
+    const order = await prisma.order.create({
+      data: {
+        orderNo,
+        userId: user.id,
+        totalAmount: Number(total.toFixed(2)),
+        status: t.status,
+        receiver: {
+          name: user.nickname ?? user.username,
+          phone: user.phone ?? '',
+          address: '上海市浦东新区张江高科技园区 demo 街 1 号'
+        },
+        remark: t.status === 0 ? '请尽快发货' : null,
+        createdAt,
+        updatedAt: createdAt,
+        paidAt: t.status >= 1 ? new Date(createdAt.getTime() + 60 * 60 * 1000) : null,
+        shippedAt: t.status >= 2 ? new Date(createdAt.getTime() + 2 * 60 * 60 * 1000) : null,
+        completedAt: t.status === 3 ? new Date(createdAt.getTime() + 3 * 24 * 60 * 60 * 1000) : null,
+        shipCompany: t.status >= 2 ? '顺丰速运' : null,
+        shipNo: t.status >= 2 ? `SF${1000000 + i}` : null,
+        items: { create: items }
+      }
+    })
+    // 自增销量
+    for (const it of items) {
+      await prisma.product.update({
+        where: { id: it.productId },
+        data: { sales: { increment: it.quantity } }
+      })
+    }
+    void order
+  }
 
   console.log('Seeding admin roles...')
   const superRole = await prisma.role.create({
@@ -113,15 +197,18 @@ async function main(): Promise<void> {
   })
 
   const counts = {
+    users: await prisma.user.count(),
     categories: await prisma.category.count(),
     products: await prisma.product.count(),
     banners: await prisma.banner.count(),
+    orders: await prisma.order.count(),
     roles: await prisma.role.count(),
     adminUsers: await prisma.adminUser.count()
   }
   console.log('Seed complete:', counts)
   console.log('Admin login: username=admin / password=admin123  (SUPER_ADMIN)')
   console.log('Admin login: username=operator / password=admin123  (ADMIN)')
+  console.log('User login (client): username=alice~eve / password=user123')
 }
 
 main()

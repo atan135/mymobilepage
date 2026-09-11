@@ -11,6 +11,8 @@ import { AdminCategoriesModule } from './admin-categories/admin-categories.modul
 import { AdminProductsModule } from './admin-products/admin-products.module'
 import { AdminBannersModule } from './admin-banners/admin-banners.module'
 import { AdminAnnouncementsModule } from './admin-announcements/admin-announcements.module'
+import { AdminOrdersModule } from './admin-orders/admin-orders.module'
+import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module'
 
 @Module({
   imports: [
@@ -25,7 +27,9 @@ import { AdminAnnouncementsModule } from './admin-announcements/admin-announceme
     AdminCategoriesModule,
     AdminProductsModule,
     AdminBannersModule,
-    AdminAnnouncementsModule
+    AdminAnnouncementsModule,
+    AdminOrdersModule,
+    AdminDashboardModule
   ]
 })
 export class AppModule {}
