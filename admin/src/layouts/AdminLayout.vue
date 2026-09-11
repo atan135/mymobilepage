@@ -47,7 +47,7 @@ const menuItems = computed<MenuItem[]>(() => [
   { path: '/coupons', title: '优惠券管理', icon: 'Discount', permission: 'coupon:list' },
   { path: '/reviews', title: '评价管理', icon: 'ChatDotRound', permission: 'review:list' },
   { path: '/audit-logs', title: '操作日志', icon: 'Document', permission: 'audit:view' },
-  { path: '/settings', title: '系统设置', icon: 'Setting', permission: 'setting:edit' },
+  { path: '/settings', title: '系统设置', icon: 'Setting', permission: 'setting:list' },
   { path: '/inventory/warnings', title: '库存预警', icon: 'Warning', permission: 'inventory:warning' },
   { path: '/refunds', title: '退款审批', icon: 'Refresh', permission: 'refund:list' }
 ])
@@ -287,3 +287,4 @@ const themeLabel = computed(() => {
   opacity: 0;
 }
 </style>
+

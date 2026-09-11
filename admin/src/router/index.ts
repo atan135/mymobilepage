@@ -56,7 +56,7 @@ const routes: RouteRecordRaw[] = [
         path: 'settings',
         name: 'admin-settings',
         component: () => import('../views/SettingsView.vue'),
-        meta: { title: '系统设置', icon: 'Setting', permission: 'setting:edit' }
+        meta: { title: '系统设置', icon: 'Setting', permission: 'setting:list' }
       },
             {
         path: 'audit-logs',
@@ -154,3 +154,4 @@ router.beforeEach((to) => {
 })
 
 export default router
+
