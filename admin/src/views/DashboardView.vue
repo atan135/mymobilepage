@@ -104,6 +104,10 @@ onUnmounted(() => {
 function goOrders() {
   router.push('/orders')
 }
+
+function goInventory() {
+  router.push('/inventory/warnings')
+}
 </script>
 
 <template>
@@ -141,6 +145,43 @@ function goOrders() {
           <div class="kpi-label">待处理订单</div>
           <div class="kpi-value danger">{{ data?.pendingOrders ?? '--' }}</div>
           <div class="kpi-hint">点击进入订单列表 →</div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card class="kpi-clickable" @click="goInventory">
+          <div class="kpi-label">库存预警</div>
+          <div class="kpi-value" :class="{ warning: (data?.lowStockCount ?? 0) > 0 }">{{ data?.lowStockCount ?? '--' }}</div>
+          <div class="kpi-hint">点击查看预警商品 →</div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <el-row :gutter="16">
+      <el-col :span="24">
+        <el-card>
+          <template #header>
+            <div class="card-header">
+              <span>库存预警</span>
+              <el-link type="primary" :underline="false" @click="goInventory">查看全部 →</el-link>
+            </div>
+          </template>
+          <el-table v-if="data?.lowStockProducts?.length" :data="data.lowStockProducts" size="small" stripe>
+            <el-table-column label="封面" width="60">
+              <template #default="{ row }">
+                <el-image :src="row.cover" style="width: 36px; height: 36px; border-radius: 4px" fit="cover" />
+              </template>
+            </el-table-column>
+            <el-table-column label="商品" min-width="160" show-overflow-tooltip>
+              <template #default="{ row }">{{ row.title }}</template>
+            </el-table-column>
+            <el-table-column label="库存 / 阈值" width="120">
+              <template #default="{ row }">
+                <span class="stock-low">{{ row.stock }}</span>
+                <span class="muted"> / {{ row.threshold }}</span>
+              </template>
+            </el-table-column>
+          </el-table>
+          <el-empty v-else description="暂无库存预警" :image-size="60" />
         </el-card>
       </el-col>
     </el-row>

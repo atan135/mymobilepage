@@ -16,6 +16,14 @@ export interface DashboardPendingOrder {
   user: { username: string; nickname: string | null }
 }
 
+export interface DashboardLowStockProduct {
+  id: number
+  title: string
+  cover: string
+  stock: number
+  threshold: number
+}
+
 export interface DashboardOverview {
   todayOrders: number
   todayGmv: number
@@ -23,6 +31,8 @@ export interface DashboardOverview {
   pendingOrders: number
   topProducts: DashboardTopProduct[]
   pendingOrderList: DashboardPendingOrder[]
+  lowStockCount: number
+  lowStockProducts: DashboardLowStockProduct[]
 }
 
 export interface SalesTrendPoint {

@@ -53,6 +53,18 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '评价管理', icon: 'ChatDotRound', permission: 'review:list' }
       },
       {
+        path: 'inventory/logs',
+        name: 'admin-inventory-logs',
+        component: () => import('../views/InventoryLogListView.vue'),
+        meta: { title: '库存流水', icon: 'List', permission: 'inventory:list' }
+      },
+      {
+        path: 'inventory/warnings',
+        name: 'admin-inventory-warnings',
+        component: () => import('../views/InventoryWarningListView.vue'),
+        meta: { title: '库存预警', icon: 'Warning', permission: 'inventory:warning' }
+      },
+      {
         path: 'reviews/:id',
         name: 'admin-review-detail',
         component: () => import('../views/ReviewDetailView.vue'),
