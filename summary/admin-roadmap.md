@@ -133,10 +133,18 @@
 
 ### 2.3 评价管理
 
-- [ ] **Prisma 新表** `Review`：`id / productId / userId / rating / content / images / status(待审/已通过/已屏蔽) / reply / createdAt`
-- [ ] **Server** `ReviewsModule`：列表 / 审核通过 / 屏蔽 / 回复
-- [ ] **Admin** `ReviewListView` + 审核 / 回复 Drawer
-- [ ] （client 端评价入口可后做，先把 admin 跑通）
+- [x] **Prisma 新表** `Review`：`id / productId / userId / rating / content / images / status(待审/已通过/已屏蔽) / reply / createdAt`
+- [x] **Server** `ReviewsModule`：列表 / 审核通过 / 屏蔽 / 回复
+- [x] **Admin** `ReviewListView` + 审核 / 回复 Drawer
+- [x] （client 端评价入口可后做，先把 admin 跑通）
+
+> 实现要点：
+> - migration `20260911125900_phase2_reviews` 已应用；`reviews` 表 + User/Product 反向关联 + 3 索引
+> - 状态机：0 ↔ 1 / 0 ↔ 2 / 1 → 2，跨级跳 400；BLOCKED 允许恢复 APPROVED
+> - `PATCH /:id/reply` 空串视为清除（trim 后 `reply: null`）
+> - admin 仅改 status + reply，不编辑 content/rating
+> - 列表加 5 档评分 tab + 关键字搜索（content / 商品标题 / 用户名）
+> - seed 写 11 条 demo 评价（3 待审 / 6 已通过 / 2 已屏蔽，覆盖全评分）
 
 ### 2.4 退款 / 售后
 
