@@ -177,10 +177,20 @@
 
 ### 2.5 数据导出
 
-- [ ] 引入 `xlsx`（SheetJS）
-- [ ] 订单导出：日期范围 + 状态筛选 → xlsx
-- [ ] 商品导出：分类 + 状态筛选 → xlsx
-- [ ] **Admin** 列表页加「导出」按钮 → 后端流式返回 xlsx
+- [x] 引入 `xlsx`（SheetJS）
+- [x] 订单导出：日期范围 + 状态筛选 → xlsx
+- [x] 商品导出：分类 + 状态筛选 → xlsx
+- [x] **Admin** 列表页加「导出」按钮 → 后端流式返回 xlsx
+
+> 实现要点：
+> - 依赖 `xlsx ^0.18.5`（devDep）
+> - 3 个导出端点：`/api/admin/exports/{orders,products,inventory-logs}`，通过 `StreamableFile` 流式返回
+> - DTO 复用列表接口筛选条件；orders / inventory-logs 多了 `dateFrom/dateTo`（可选，不传=全量）
+> - 字段数：订单 17 列 / 商品 10 列 / 库存流水 12 列
+> - 权限码：`types.ts` 的 `export:*` 通配展开为 `export:orders` + `export:products` + `export:inventory_logs`
+> - admin 端 OrderListView / ProductListView / InventoryLogListView 复用 `v-permission` 控制按钮可见性
+> - 演示版不分批（`findMany` 不带 skip/take），demo 数据 < 1000 行无压力
+> - **3 个 export（不止原计划的 orders+products）**：本轮加上库存流水导出（与 2.2 联动，运营审计常用）
 
 ### 2.6 操作日志
 
