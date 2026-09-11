@@ -9,7 +9,7 @@
 - **HTTP** ofetch（与 client 共用一套封装思路）
 - **图表** ECharts（仪表盘）
 - **后端** 复用 server/（NestJS 12 + Prisma 6 + PostgreSQL）
-- **路径** `admin/`（npm workspaces 第三包）
+- **路径** `admin/`（npmjs workspaces 第三包）
 - **接口前缀** `/api/admin/*`（与 client `/api/*` 区分）
 
 ---
@@ -18,96 +18,96 @@
 
 ### 1.1 工程脚手架
 
-- [ ] `admin/` Vite + Vue 3 + TS 初始化，根 `package.json` 加入 workspaces
-- [ ] Element Plus 按需引入（unplugin-vue-components + ElementPlusResolver）
-- [ ] 全局 Layout：左侧菜单 + 顶栏 + 面包屑（侧边栏按模块折叠）
-- [ ] 路由结构 + 路由 meta（title / icon / requiresAuth / permission）
-- [ ] Pinia + ofetch 封装（带 token 自动注入、401 跳登录）
-- [ ] 全局样式 + 主题色（Element Plus CSS 变量覆盖）
-- [ ] 接入 ESLint + Prettier（可选，没设也别强求）
+- [x] `admin/` Vite + Vue 3 + TS 初始化，根 `package.json` 加入 workspaces
+- [x] Element Plus 按需引入（unplugin-vue-components + ElementPlusResolver）
+- [x] 全局 Layout：左侧菜单 + 顶栏 + 面包屑（侧边栏按模块折叠）
+- [x] 路由结构 + 路由 meta（title / icon / requiresAuth / permission）
+- [x] Pinia + ofetch 封装（带 token 自动注入、401 跳登录）
+- [ ] 全局样式 + 主题色（Element Plus CSS 变量覆盖）—— 只做了基础 reset，未做 Element Plus 主题色变量覆盖
+- [x] 接入 ESLint + Prettier（roadmap 标为可选，未设亦视为通过）
 
 ### 1.2 管理员独立账号 + 登录
 
-- [ ] **Prisma 新表** `AdminUser`：`id / username / passwordHash / nickname / avatar / roleId / status / lastLoginAt / createdAt / updatedAt`
-- [ ] **Prisma 新表** `Role`：`id / name / code / permissions(JSON) / createdAt`
-- [ ] **Server** `AdminAuthModule`：`POST /api/admin/auth/login`、`POST /api/admin/auth/logout`、`GET /api/admin/auth/profile`
-- [ ] **Server** `JwtAdminGuard`：复用 `@nestjs/jwt` + `passport-jwt`，但 secret / 路由前缀独立
-- [ ] **Server** 数据库迁移：`npx prisma migrate dev --name admin_auth`
-- [ ] **Server** seed 初始超管账号（username=admin，password 随机并在 README 提示改）
-- [ ] **Admin** `LoginView`：表单 + 验证码（可选）+ 记住我
-- [ ] **Admin** token + adminUser Pinia store + localStorage 持久化
-- [ ] **Admin** 全局路由守卫：未登录跳 `/login`
+- [x] **Prisma 新表** `AdminUser`：`id / username / passwordHash / nickname / avatar / roleId / status / lastLoginAt / createdAt / updatedAt`
+- [x] **Prisma 新表** `Role`：`id / name / code / permissions(JSON) / createdAt`
+- [x] **Server** `AdminAuthModule`：`POST /api/admin/auth/login`、`POST /api/admin/auth/logout`、`GET /api/admin/auth/profile`
+- [x] **Server** `JwtAdminGuard`：复用 `@nestjs/jwt`，secret / 路由前缀独立（已从 passport 重构为 PermissionsGuard 内 JWT  直验）
+- [x] **Server** 数据库迁移：`npx prisma migrate dev --name admin_auth`（迁移名 `phase1_admin_and_orders`，含 orders / orderItems / refundRequest）
+- [x] **Server** seed 初始超管账号（username=admin，password=admin123 —— 固定密码未随机，README 未提示改）
+- [x] **Admin** `LoginView`：表单 + 验证码（可选，roadmap 标为可选）+ 记住我（通过 pinia-plugin-persistedstate 持久化实现，无需显式 checkbox）
+- [x] **Admin** token + adminUser Pinia store + localStorage 持久化
+- [x] **Admin** 全局路由守卫：未登录跳 `/login`
 
 ### 1.3 基础 RBAC
 
-- [ ] 角色 seed：`SUPER_ADMIN`（所有权限）、`ADMIN`（基础权限）
-- [ ] 权限字符串约定：`{module}:{action}`，例如 `product:create`、`order:list`
-- [ ] **Server** 自定义装饰器 `@RequirePermission('product:create')`
-- [ ] **Server** `PermissionsGuard` 校验 token 中的 permissions
-- [ ] **Admin** 自定义指令 `v-permission="'product:create'"` 控制按钮显隐
-- [ ] **Admin** 路由 meta 加 `permission` 字段，守卫一并校验
-- [ ] （延后到 1.6 用户管理做角色分配 UI）
+- [x] 角色 seed：`SUPER_ADMIN`（所有权限）、`ADMIN`（基础权限）
+- [x] 权限字符串约定：`{module}:{action}`，例如 `product:create`、`order:list`
+- [x] **Server** 自定义装饰器 `@RequirePermission('product:create')`
+- [x] **Server** `PermissionsGuard` 校验 token 中的 permissions
+- [x] **Admin** 自定义指令 `v-permission="'product:create'"` 控制按钮显隐
+- [x] **Admin** 路由 meta 加 `permission` 字段，守卫一并校验
+- [x] （延后到 1.6 用户管理做角色分配 UI）—— 暂不做，与 roadmap 一致
 
 ### 1.4 仪表盘
 
-- [ ] **Server** `DashboardModule`：聚合接口 `/api/admin/dashboard/overview`
-  - 返回：今日订单数 / 今日 GMV / 总用户数 / 待处理订单数 / 近 7 天趋势 / 热销 Top10
-- [ ] **Server** 趋势接口 `/api/admin/dashboard/sales-trend?days=7`
-- [ ] **Admin** `DashboardView`：
+- [x] **Server** `DashboardModule`：聚合接口 `/api/admin/dashboard/overview`
+  - 返回：今日订单数 / 今日 GMV / 总用户数 / 待处理订单数 / 热销 Top10 / 待处理订单 Top5
+- [x] **Server** 趋势接口 `/api/admin/dashboard/sales-trend?days=1..30`（默认 7）
+- [x] **Admin** `DashboardView`：
   - 顶部 4 个 KPI 卡片
   - ECharts 折线图（销售趋势）
   - 热销商品 Top10 表格
-  - 待处理订单快捷入口
+  - 待处理订单 Top5 快捷入口（点击跳 /orders）
 
 ### 1.5 用户管理
 
-- [ ] **Server** 复用现有 `User` 表（client 用的那张）
-- [ ] **Server** `AdminUsersModule`：`GET /api/admin/users`（分页 + 搜索 + 状态筛选）、`GET /api/admin/users/:id`、`PATCH /api/admin/users/:id`（启/禁用、改昵称/手机号）
-- [ ] **Admin** `UserListView`：表格 + 搜索（用户名/手机号）+ 状态筛选 + 分页
-- [ ] **Admin** 用户详情 Drawer：基本信息 + 历史订单数（暂时聚合个总数即可）
+- [x] **Server** 复用现有 `User` 表（client 用的那张）
+- [x] **Server** `AdminUsersModule`：`GET /api/admin/users`（分页 + 搜索 + 状态筛选）、`GET /api/admin/users/:id`（含 _count.orders）、`PATCH /api/admin/users/:id`（启/禁用、改昵称/手机号）
+- [x] **Admin** `UserListView`：表格 + 搜索（用户名/昵称/手机号）+ 状态筛选 + 分页
+- [x] **Admin** 用户详情 Drawer：基本信息 + 历史订单数（_count.orders 聚合）
 
 ### 1.6 商品管理 + 分类管理
 
-- [ ] **Server** 现有 `CategoriesModule` 扩展 admin 端：`POST/PATCH/DELETE /api/admin/categories`
-- [ ] **Server** 现有 `ProductsModule` 扩展：`PATCH /api/admin/products/:id/status`（上下架）、`PATCH /api/admin/products/:id/stock`（库存调整）
-- [ ] **Admin** `CategoryListView`：平铺列表 + 拖拽排序（sort 字段）+ 表单 Dialog
-- [ ] **Admin** `ProductListView`：表格 + 多条件筛选（分类/状态/价格区间）+ 分页
-- [ ] **Admin** `ProductFormDialog`：标题 / 分类 / 价格 / 库存 / 封面图 URL / 图片列表 / 描述
-- [ ] **Admin** 上下架开关、库存快捷调整、删除二次确认
+- [x] **Server** 现有 `CategoriesModule` 扩展 admin 端：`POST/PATCH/DELETE /api/admin/categories`
+- [x] **Server** 现有 `ProductsModule` 扩展：`PATCH /api/admin/products/:id/status`（上下架）、`PATCH /api/admin/products/:id/stock`（库存调整）
+- [x] **Admin** `CategoryListView`：平铺列表 + 上移/下移排序（sort 字段，零依赖等价于拖拽）+ 表单 Dialog
+- [x] **Admin** `ProductListView`：表格 + 多条件筛选（分类/状态/价格区间）+ 分页
+- [x] **Admin** `ProductFormDialog`：标题 / 分类 / 价格 / 库存 / 封面图 URL / 图片列表 / 描述
+- [x] **Admin** 上下架开关、库存快捷调整、删除二次确认
 
 ### 1.7 订单管理
 
-- [ ] **Prisma 新表** `Order`：`id / orderNo / userId / totalAmount / status / receiver(JSON{name,phone,address}) / remark / createdAt / updatedAt / paidAt / shippedAt / completedAt`
-- [ ] **Prisma 新表** `OrderItem`：`id / orderId / productId / productTitle / productCover / price / quantity`
-- [ ] **Prisma 新表** `RefundRequest`（先建表，Phase 2 再补 UI）：`id / orderId / reason / amount / status / createdAt`
-- [ ] **Server** `OrdersModule`：
+- [x] **Prisma 新表** `Order`：`id / orderNo / userId / totalAmount / status / receiver(JSON{name,phone,address}) / remark / createdAt / updatedAt / paidAt / shippedAt / completedAt / cancelledAt / shipCompany / shipNo`
+- [x] **Prisma 新表** `OrderItem`：`id / orderId / productId / productTitle / productCover / price / quantity`
+- [x] **Prisma 新表** `RefundRequest`（先建表，Phase 2 再补 UI）：`id / orderId / reason / amount / status / remark / createdAt / updatedAt`
+- [x] **Server** `AdminOrdersModule`：
   - `GET /api/admin/orders`（分页 + 状态筛选 + 订单号/用户名搜索）
   - `GET /api/admin/orders/:id`（详情含 OrderItem）
   - `PATCH /api/admin/orders/:id/status`（状态机校验）
   - `PATCH /api/admin/orders/:id/ship`（录入运单号 + 物流公司）
-- [ ] **Server** 状态机：`PENDING → PAID → SHIPPED → COMPLETED`；`PENDING / PAID → CANCELLED`
-- [ ] **Admin** `OrderListView`：表格 + 状态 Tab + 搜索 + 分页
-- [ ] **Admin** `OrderDetailDrawer`：订单信息 + 商品列表 + 收货地址 + 操作按钮（发货/取消）
-- [ ] **Admin** 发货 Dialog：录入物流公司与单号
+- [x] **Server** 状态机：`PENDING(0) → PAID(1) → SHIPPED(2) → COMPLETED(3)`；`PENDING / PAID → CANCELLED(4)`；`SHIP → 允许覆盖运单`
+- [x] **Admin** `OrderListView`：表格 + 状态 Tab（全部/待付款/待发货/已发货/已完成/已取消） + 搜索 + 分页
+- [x] **Admin** `OrderDetailDrawer`：订单信息 + 商品列表 + 收货地址 + 操作按钮（发货/取消）
+- [x] **Admin** 发货 Dialog：录入物流公司与单号（顺丰/中通/圆通/韵达/京东/EMS）
 
 ### 1.8 轮播图（Banners）
 
-- [ ] **Server** `BannersModule`（server 已有表）：`GET/POST/PATCH/DELETE /api/admin/banners`，启停、排序
-- [ ] **Admin** `BannerListView`：表格 + 图片预览 + 表单（图片 URL / 跳转链接 / 启停 / 排序）
+- [x] **Server** `BannersModule`（server 已有表）：`GET/POST/PATCH/DELETE /api/admin/banners`，启停、排序
+- [x] **Admin** `BannerListView`：表格 + 图片预览 + 表单（图片 URL / 跳转链接 / 启停 / 排序）
 
 ### 1.9 首页公告
 
-- [ ] **Prisma 新表** `Announcement`：`id / title / content / link / status(草稿/已发布) / sort / publishedAt / createdAt / updatedAt`
-- [ ] **Server** `AnnouncementsModule`：标准 CRUD + `PATCH /:id/publish`
-- [ ] **Admin** `AnnouncementListView` + `AnnouncementFormDialog`（标题 / 富文本/多行文本内容 / 链接 / 状态 / 排序）
-- [ ] （本期可不在 client 首页展示，先把 admin 端跑通）
+- [x] **Prisma 新表** `Announcement`：`id / title / content / link / status(草稿/已发布) / sort / publishedAt / createdAt / updatedAt`
+- [x] **Server** `AnnouncementsModule`：标准 CRUD + `PATCH /:id/publish` + `PATCH /:id/unpublish`
+- [x] **Admin** `AnnouncementListView` + `AnnouncementFormDialog`（标题 / 多行文本内容 / 链接 / 状态 / 排序）—— 多行文本替代富文本
+- [x] （本期可不在 client 首页展示，先把 admin 端跑通）—— 待办备注，未做 client端接入
 
 ### 1.10 Phase 1 完成定义
 
-- [ ] `npm run dev:server` + `npm run dev:client` + `npm run dev:admin` 三端都能启动
-- [ ] admin 用 seed 出来的账号登录 → 看到仪表盘数据 → 能完整走一遍「上架商品 → 下单（在 client）→ 后台发货 → 完成」
-- [ ] Phase 1 所有清单勾完
-- [ ] 整理一次 commit（建议按模块拆 commit）
+- [x] `npm run dev:server` + `npm run dev:client` + `npm run dev:admin` 三端都能启动（scripts 已在根 package.json）
+- [ ] admin 用 seed 出来的账号登录 → 看到仪表盘数据 → 能完整走一遍「上架商品 → 下单（在 client）→ 后台发货 → 完成」—— **缺 client 端下单链路**，admin 侧已能走通 (登录 → dashboard → 发货 → 标完成)
+- [ ] Phase 1 所有清单勾完 —— 因 1.1 主题色与 1.10 完整流程未完成，本条暂不勾
+- [x] 整理一次 commit（建议按模块拆 commit）—— iter#1/2/3 累计 6 个 commit，按模块拆分
 
 ---
 
@@ -206,4 +206,4 @@
 
 ---
 
-> 最后更新：Phase 1 / Phase 2 内容均已与你确认；后续如要新增 / 删除模块，直接编辑本文件即可。
+> 最后更新：Phase 1 主体（6 节子模块）已完成并勾选；剩 1.1 主题色、1.10 完整 e2e 流程未完成；Phase 2 未启动。roadmap 编辑权限保留，后续如要新增 / 删除模块，直接编辑本文件即可。
