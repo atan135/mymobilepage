@@ -16,6 +16,14 @@ export type AdminPermission =
   | 'banner:list' | 'banner:create' | 'banner:edit' | 'banner:delete'
   | 'announcement:list' | 'announcement:create' | 'announcement:edit' | 'announcement:delete' | 'announcement:publish'
   | 'coupon:list' | 'coupon:create' | 'coupon:edit' | 'coupon:on_off' | 'coupon:delete' | 'coupon:grant' | 'inventory:list' | 'inventory:warning' | 'review:list' | 'review:detail' | 'review:approve' | 'review:block' | 'review:reply' | 'refund:list' | 'refund:detail' | 'refund:approve' | 'refund:reject' | 'refund:refund'
-  | 'export:orders' | 'export:products' | 'export:inventory_logs' | 'audit:view' | 'setting:edit'
+  | 'export:orders' | 'export:products' | 'export:inventory_logs' | 'audit:view'
+    // settings 权限按 group 拆分 (Phase 2 git-review Medium #11):
+    // 仅 admin 持全部；operator 默认持 site / customer_service 两个 group 的编辑权。
+    | 'setting:list'
+    | 'setting:site:edit'
+    | 'setting:customer_service:edit'
+    | 'setting:payment:edit'
+    | 'setting:shipping:edit'
+    | 'setting:general:edit'
 
 

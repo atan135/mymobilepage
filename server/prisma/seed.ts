@@ -33,7 +33,12 @@ const ADMIN_PERMISSIONS = [
   'export:orders', 'export:products', 'export:inventory_logs',
   'audit:view',
   'review:list', 'review:detail', 'review:approve',
-  'review:block', 'review:reply'
+  'review:block', 'review:reply',
+  // settings 按 group 拆分 (Phase 2 git-review Medium #11):
+  // 仅 site / customer_service 两个 group 的编辑权, payment / shipping / general 留给 super admin
+  'setting:list',
+  'setting:site:edit',
+  'setting:customer_service:edit'
 ]
 
 const seedUsers = [
