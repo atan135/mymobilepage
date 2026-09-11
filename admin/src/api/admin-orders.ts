@@ -8,8 +8,9 @@ import type { PaginatedResult } from './types'
  *   2 SHIPPED    已发货
  *   3 COMPLETED  已完成
  *   4 CANCELLED  已取消
+ *   5 REFUNDED   已退款（markRefunded 后置位）
  */
-export const ORDER_STATUSES = [0, 1, 2, 3, 4] as const
+export const ORDER_STATUSES = [0, 1, 2, 3, 4, 5] as const
 export type OrderStatus = (typeof ORDER_STATUSES)[number]
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
@@ -17,7 +18,8 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   1: '待发货',
   2: '已发货',
   3: '已完成',
-  4: '已取消'
+  4: '已取消',
+  5: '已退款'
 }
 
 export const ORDER_STATUS_TAG_TYPE: Record<OrderStatus, 'primary' | 'success' | 'warning' | 'info' | 'danger'> = {
@@ -25,7 +27,8 @@ export const ORDER_STATUS_TAG_TYPE: Record<OrderStatus, 'primary' | 'success' | 
   1: 'primary',
   2: 'success',
   3: 'info',
-  4: 'danger'
+  4: 'danger',
+  5: 'info'
 }
 
 export interface OrderListItem {
@@ -106,3 +109,4 @@ export function shipAdminOrder(id: number, data: { shipCompany: string; shipNo: 
     body: data
   })
 }
+
