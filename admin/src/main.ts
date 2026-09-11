@@ -11,12 +11,16 @@ import './styles/main.css'
 import App from './App.vue'
 import router from './router'
 import permissionDirective from './directives/permission'
+import { useThemeStore } from './stores/theme'
 
 const app = createApp(App)
 
 const pinia = createPinia()
 pinia.use(piniaPersistedstate)
 app.use(pinia)
+
+// 在挂载之前初始化主题，避免页面闪烁（store 创建时 watchEffect 会立即跑一次）
+useThemeStore()
 
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component as never)

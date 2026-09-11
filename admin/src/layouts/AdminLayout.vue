@@ -14,9 +14,13 @@ import {
   Picture,
   Bell,
   SwitchButton,
-  UserFilled
+  UserFilled,
+  Sunny,
+  Moon,
+  Monitor
 } from '@element-plus/icons-vue'
 import { useAdminAuthStore } from '../stores/admin-auth'
+import { useThemeStore, type ThemeMode } from '../stores/theme'
 
 interface MenuItem {
   path: string
@@ -28,6 +32,7 @@ interface MenuItem {
 const router = useRouter()
 const route = useRoute()
 const auth = useAdminAuthStore()
+const theme = useThemeStore()
 
 const collapsed = ref(false)
 
@@ -66,6 +71,26 @@ async function onLogout() {
 function goProfile() {
   ElMessage.info(`当前角色：${auth.user?.role ?? '-'}`)
 }
+
+/** 切换主题时给根节点挂短暂过渡 class，避免长期 transition 成本 */
+function setTheme(m: ThemeMode) {
+  const html = document.documentElement
+  html.classList.add('theme-transition')
+  theme.setMode(m)
+  window.setTimeout(() => html.classList.remove('theme-transition'), 220)
+}
+
+const themeIcon = computed(() => {
+  if (theme.mode === 'light') return Sunny
+  if (theme.mode === 'dark') return Moon
+  return Monitor
+})
+
+const themeLabel = computed(() => {
+  if (theme.mode === 'light') return '浅色'
+  if (theme.mode === 'dark') return '深色'
+  return '跟随系统'
+})
 </script>
 
 <template>
@@ -80,9 +105,9 @@ function goProfile() {
         :collapse="collapsed"
         :collapse-transition="false"
         router
-        background-color="#001529"
-        text-color="#cfd3dc"
-        active-text-color="#ffffff"
+        background-color="var(--app-aside-bg)"
+        text-color="var(--app-aside-text-color)"
+        active-text-color="var(--app-aside-text-active)"
       >
         <el-menu-item
           v-for="m in menuItems"
@@ -105,6 +130,26 @@ function goProfile() {
           <span class="crumb">{{ breadcrumb }}</span>
         </div>
         <div class="header-right">
+          <el-dropdown trigger="click" @command="(c: ThemeMode) => setTheme(c)">
+            <span class="theme-toggle" :title="`当前：${themeLabel}`">
+              <el-icon class="theme-icon"><component :is="themeIcon" /></el-icon>
+              <span class="theme-label">{{ themeLabel }}</span>
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="light" :disabled="theme.mode === 'light'">
+                  <el-icon><component :is="Sunny" /></el-icon>浅色
+                </el-dropdown-item>
+                <el-dropdown-item command="dark" :disabled="theme.mode === 'dark'">
+                  <el-icon><component :is="Moon" /></el-icon>深色
+                </el-dropdown-item>
+                <el-dropdown-item command="system" :disabled="theme.mode === 'system'">
+                  <el-icon><component :is="Monitor" /></el-icon>跟随系统
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+
           <el-dropdown @command="(c: string) => c === 'logout' && onLogout()">
             <span class="user">
               <el-avatar :size="28" :icon="UserFilled" />
@@ -138,7 +183,7 @@ function goProfile() {
   height: 100vh;
 }
 .aside {
-  background: #001529;
+  background: var(--app-aside-bg);
   transition: width 0.2s ease;
 }
 .logo {
@@ -153,7 +198,7 @@ function goProfile() {
   width: 32px;
   height: 32px;
   border-radius: 6px;
-  background: #409eff;
+  background: var(--app-brand);
   color: #fff;
   font-weight: 700;
   display: flex;
@@ -168,8 +213,8 @@ function goProfile() {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #fff;
-  border-bottom: 1px solid #ebeef5;
+  background: var(--app-header-bg);
+  border-bottom: 1px solid var(--app-border-color);
   padding: 0 16px;
 }
 .header-left {
@@ -177,9 +222,36 @@ function goProfile() {
   align-items: center;
   gap: 12px;
 }
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 .crumb {
   font-size: 15px;
   font-weight: 500;
+  color: var(--app-text-primary);
+}
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--app-text-regular);
+  user-select: none;
+}
+.theme-toggle:hover {
+  background: var(--app-bg);
+  color: var(--app-text-primary);
+}
+.theme-icon {
+  font-size: 16px;
+}
+.theme-label {
+  font-size: 13px;
 }
 .user {
   display: flex;
@@ -190,13 +262,14 @@ function goProfile() {
   border-radius: 4px;
 }
 .user:hover {
-  background: #f5f7fa;
+  background: var(--app-bg);
 }
 .name {
   font-size: 14px;
+  color: var(--app-text-primary);
 }
 .main {
-  background: #f5f7fa;
+  background: var(--app-bg);
   padding: 16px;
 }
 .fade-enter-active,

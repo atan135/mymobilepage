@@ -1,3 +1,14 @@
+/* ============================================================
+   全局样式与品牌主题
+
+   - Element Plus 自身用 --el-* 变量，dark/css-vars.css 在 .dark
+     类下提供了完整的暗色覆盖；这里只在 :root 调整品牌主色。
+   - 自有应用区（aside / header / 卡片 / 文字）通过 --app-*
+     变量驱动，并在 :root[data-theme="dark"] 下重写。
+   - 主题切换时给根节点加 .theme-transition 类，0.2s 后移除，
+     配合具体元素 transition 属性做平滑过渡。
+   ============================================================ */
+
 html,
 body,
 #app {
@@ -6,8 +17,8 @@ body,
   padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica,
     "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
-  background: #f5f7fa;
-  color: #303133;
+  background: var(--app-bg);
+  color: var(--app-text-primary);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -18,4 +29,64 @@ body,
 a {
   color: inherit;
   text-decoration: none;
+}
+
+/* ---------------- 浅色（默认） ---------------- */
+:root {
+  /* 品牌主色：保持 Element Plus 默认蓝，但显式声明便于覆盖 */
+  --el-color-primary: #409eff;
+  --el-color-primary-light-3: #79bbff;
+  --el-color-primary-light-5: #a0cfff;
+  --el-color-primary-light-7: #c6e2ff;
+  --el-color-primary-light-8: #d9ecff;
+  --el-color-primary-light-9: #ecf5ff;
+  --el-color-primary-dark-2: #337ecc;
+
+  --el-border-radius-base: 6px;
+
+  /* 应用自有变量 */
+  --app-bg: #f5f7fa;
+  --app-card-bg: #ffffff;
+  --app-header-bg: #ffffff;
+  --app-aside-bg: #001529;
+  --app-aside-text-color: #cfd3dc;
+  --app-aside-text-active: #ffffff;
+  --app-border-color: #ebeef5;
+  --app-text-primary: #303133;
+  --app-text-regular: #606266;
+  --app-text-secondary: #909399;
+  --app-brand: #409eff;
+  --app-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+}
+
+/* ---------------- 深色 ---------------- */
+:root[data-theme="dark"] {
+  /* Element Plus 暗色覆盖已经由 .dark 提供；这里保持品牌主色一致 */
+  --el-color-primary: #409eff;
+
+  --app-bg: #14161b;
+  --app-card-bg: #1f2128;
+  --app-header-bg: #1c1e25;
+  --app-aside-bg: #0d1117;
+  --app-aside-text-color: #b0b3b8;
+  --app-aside-text-active: #ffffff;
+  --app-border-color: #2a2d34;
+  --app-text-primary: #e5e6e8;
+  --app-text-regular: #cfd0d2;
+  --app-text-secondary: #8b8d91;
+  --app-brand: #409eff;
+  --app-shadow: 0 1px 4px rgba(0, 0, 0, 0.32);
+}
+
+/* ---------------- 平滑过渡 ---------------- */
+/* 仅在切换瞬间打开过渡，避免页面长期承担 transition 成本 */
+.theme-transition,
+.theme-transition *,
+.theme-transition *::before,
+.theme-transition *::after {
+  transition: background-color 0.2s ease,
+              border-color 0.2s ease,
+              color 0.2s ease,
+              fill 0.2s ease,
+              stroke 0.2s ease !important;
 }
