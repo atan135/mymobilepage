@@ -26,7 +26,7 @@ export class AdminExportsService {
     if (q.dateFrom || q.dateTo) {
       where.createdAt = {}
       if (q.dateFrom) where.createdAt.gte = new Date(q.dateFrom)
-      if (q.dateTo) where.createdAt.lte = new Date(q.dateTo)
+      if (q.dateTo) where.createdAt.lte = this.parseDateTo(q.dateTo)
     }
 
     const rows = await this.prisma.order.findMany({
@@ -105,7 +105,7 @@ export class AdminExportsService {
     if (q.dateFrom || q.dateTo) {
       where.createdAt = {}
       if (q.dateFrom) where.createdAt.gte = new Date(q.dateFrom)
-      if (q.dateTo) where.createdAt.lte = new Date(q.dateTo)
+      if (q.dateTo) where.createdAt.lte = this.parseDateTo(q.dateTo)
     }
 
     const rows = await this.prisma.inventoryLog.findMany({
@@ -155,5 +155,17 @@ export class AdminExportsService {
       pad(d.getMinutes()),
       pad(d.getSeconds())
     ].join(':')
+  }
+
+  /**
+   * 解析 dateTo：若仅含日期（无 T/时分秒），补到当天 23:59:59.999，
+   * 避免 "2026-09-11" 被 new Date 解析为 00:00:00 导致全天数据被滤掉。
+   * 含时分秒或已是 ISO 时间戳则原样解析。
+   */
+  private parseDateTo(dateTo: string): Date {
+    if (/^d{4}-d{2}-d{2}$/.test(dateTo)) {
+      return new Date(`${dateTo}T23:59:59.999Z`)
+    }
+    return new Date(dateTo)
   }
 }
