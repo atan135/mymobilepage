@@ -180,6 +180,18 @@ export class AdminRefundsService {
           }
         })
       }
+
+      // 同步订单状态为 REFUNDED(5) 并写入 refunded_at 时间戳,
+      // 保持 order.status 与 refundRequest.status 一致, 便于前端与对账。
+      // 同样用条件 updateMany where: { id, status: { in: [2, 3] } },
+      // count !== 1 时拒绝 (虽然上面 refundRequest 已抢锁, 这里再做一次防御性校验)。
+      const orderUpdated = await tx.order.updateMany({
+        where: { id: r.orderId, status: { in: [2, 3] } },
+        data: { status: 5, refundedAt: new Date() }
+      })
+      if (orderUpdated.count !== 1) {
+        throw new ConflictException('订单状态不允许退款，请刷新后重试')
+      }
     })
 
     return this.findOne(id)

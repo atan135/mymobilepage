@@ -15,8 +15,9 @@ import {
  *   2 SHIPPED    已发货 / 待收货
  *   3 COMPLETED  已完成
  *   4 CANCELLED  已取消
+ *   5 REFUNDED   已退款（markRefunded 后置位，配套 orders.refunded_at 字段）
  */
-export const ORDER_STATUSES = [0, 1, 2, 3, 4] as const
+export const ORDER_STATUSES = [0, 1, 2, 3, 4, 5] as const
 export type OrderStatus = (typeof ORDER_STATUSES)[number]
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
@@ -24,16 +25,18 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   1: '待发货',
   2: '已发货',
   3: '已完成',
-  4: '已取消'
+  4: '已取消',
+  5: '已退款'
 }
 
 /** 状态机：状态 → 允许的目标状态集合 */
 export const ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   0: [1, 4],
   1: [2, 4],
-  2: [3],
-  3: [],
-  4: []
+  2: [3, 5],
+  3: [5],
+  4: [],
+  5: []
 }
 
 export class QueryOrderDto {

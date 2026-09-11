@@ -304,6 +304,7 @@ export class ClientOrdersService {
     shippedAt: Date | null
     completedAt: Date | null
     cancelledAt: Date | null
+    refundedAt: Date | null
     shipCompany: string | null
     shipNo: string | null
     createdAt: Date

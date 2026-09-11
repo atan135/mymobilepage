@@ -132,6 +132,7 @@ model Order {
   shippedAt   DateTime?   @map("shipped_at")
   completedAt DateTime?   @map("completed_at")
   cancelledAt DateTime?   @map("cancelled_at")
+  refundedAt  DateTime?   @map("refunded_at")
   shipCompany String?     @map("ship_company")
   shipNo      String?     @map("ship_no")
   createdAt   DateTime    @default(now()) @map("created_at")
