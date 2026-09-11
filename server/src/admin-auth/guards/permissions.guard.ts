@@ -32,9 +32,15 @@ export class PermissionsGuard implements CanActivate {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [ctx.getHandler(), ctx.getClass()])
     if (isPublic) return true
 
+    // 本守卫只覆盖 /api/admin/* 后台接口。客户端公开接口（/api/categories、
+    // /api/banners 等）由自身是否挂 @UseGuards(JwtAuthGuard) 决定，
+    // 后台子模块的路由全在 /api/admin/* 下，命中后才有 token + 权限校验。
+    const req = ctx.switchToHttp().getRequest<{ path: string }>()
+    if (!req.path.startsWith('/api/admin')) return true
+
     // 1. 校验 Bearer Token + 把 payload 挂到 req.user
-    const req = ctx.switchToHttp().getRequest<{ user?: AdminAuthedUser; headers: Record<string, string | undefined> }>()
-    const auth = req.headers['authorization']
+    const authedReq = ctx.switchToHttp().getRequest<{ user?: AdminAuthedUser; headers: Record<string, string | undefined> }>()
+    const auth = authedReq.headers['authorization']
     if (!auth?.startsWith('Bearer ')) {
       throw new UnauthorizedException('未登录或 Token 缺失')
     }
@@ -49,7 +55,7 @@ export class PermissionsGuard implements CanActivate {
         role: decoded.role,
         permissions: decoded.permissions ?? []
       }
-      req.user = payload
+      authedReq.user = payload
     } catch {
       throw new UnauthorizedException('Token 无效或已过期')
     }
