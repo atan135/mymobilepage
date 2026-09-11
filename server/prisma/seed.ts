@@ -29,6 +29,7 @@ const ADMIN_PERMISSIONS = [
   'coupon:on_off', 'coupon:delete', 'coupon:grant',
   'refund:list', 'refund:detail', 'refund:approve',
   'refund:reject', 'refund:refund',
+  'inventory:list', 'inventory:warning',
   'review:list', 'review:detail', 'review:approve',
   'review:block', 'review:reply'
 ]

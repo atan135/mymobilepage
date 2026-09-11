@@ -33,7 +33,8 @@ model AdminUser {
   status       Int       @default(1)
   roleId       Int       @map("role_id")
   role         Role      @relation(fields: [roleId], references: [id])
-  lastLoginAt  DateTime? @map("last_login_at")
+  lastLoginAt   DateTime? @map("last_login_at")
+  inventoryLogs InventoryLog[]
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
@@ -76,14 +77,16 @@ model Product {
   description   String?  @db.Text
   sales         Int      @default(0)
   stock         Int      @default(0)
+  threshold     Int      @default(10)
   status        Int      @default(1)
   categoryId    Int      @map("category_id")
   category      Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  items   OrderItem[]
-  reviews Review[]
+  items          OrderItem[]
+  reviews        Review[]
+  inventoryLogs  InventoryLog[]
 
   @@index([categoryId])
   @@map("products")
@@ -233,3 +236,22 @@ model Review {
   @@index([status])
   @@map("reviews")
 }
+
+model InventoryLog {
+  id          Int       @id @default(autoincrement())
+  productId   Int       @map("product_id")
+  product     Product   @relation(fields: [productId], references: [id])
+  type        Int
+  quantity    Int
+  reason      String?
+  operatorId  Int?      @map("operator_id")
+  operator    AdminUser? @relation(fields: [operatorId], references: [id])
+  beforeStock Int       @map("before_stock")
+  afterStock  Int       @map("after_stock")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([productId, createdAt])
+  @@index([type, createdAt])
+  @@map("inventory_logs")
+}
+
