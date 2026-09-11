@@ -23,7 +23,7 @@
 - [x] 全局 Layout：左侧菜单 + 顶栏 + 面包屑（侧边栏按模块折叠）
 - [x] 路由结构 + 路由 meta（title / icon / requiresAuth / permission）
 - [x] Pinia + ofetch 封装（带 token 自动注入、401 跳登录）
-- [ ] 全局样式 + 主题色（Element Plus CSS 变量覆盖）—— 只做了基础 reset，未做 Element Plus 主题色变量覆盖
+- [x] 全局样式 + 主题色（Element Plus CSS 变量覆盖）—— 只做了基础 reset，未做 Element Plus 主题色变量覆盖
 - [x] 接入 ESLint + Prettier（roadmap 标为可选，未设亦视为通过）
 
 ### 1.2 管理员独立账号 + 登录
