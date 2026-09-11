@@ -179,6 +179,10 @@ export class AdminCouponsService {
   /**
    * 手动发放给指定用户。已领取过（达到 perUserLimit）的用户自动跳过；
    * 单次最多发放到总数达限。
+   *
+   * 并发安全：与 CouponsService.claim 一致，
+   * 通过 SELECT ... FOR UPDATE 锁住 Coupon 行，并在事务内重新校验 totalClaimed，
+   * 避免 count-then-createMany 的超发。
    */
   async grant(couponId: number, dto: GrantCouponDto) {
     const coupon = await this.findOne(couponId)
@@ -189,48 +193,61 @@ export class AdminCouponsService {
     if (coupon.validTo < now) throw new BadRequestException('该优惠券已过期')
 
     const userIds = Array.from(new Set(dto.userIds))
+    if (userIds.length === 0) {
+      throw new BadRequestException('请选择至少一个用户')
+    }
 
-    const existing = await this.prisma.userCoupon.findMany({
-      where: { couponId, userId: { in: userIds } },
-      select: { userId: true }
+    return this.prisma.$transaction(async (tx) => {
+      // 锁住 coupon 行，使同一 coupon 的并发 grant 串行化。
+      const lockRows = await tx.$queryRaw<Array<{ id: number }>>(
+        Prisma.sql`SELECT id FROM "Coupon" WHERE id = ${couponId} FOR UPDATE`
+      )
+      if (lockRows.length === 0) {
+        throw new NotFoundException('优惠券不存在')
+      }
+
+      const existing = await tx.userCoupon.findMany({
+        where: { couponId, userId: { in: userIds } },
+        select: { userId: true }
+      })
+      const existingUserIds = new Set(existing.map((e) => e.userId))
+      const newUserIds = userIds.filter((id) => !existingUserIds.has(id))
+      if (newUserIds.length === 0) {
+        throw new BadRequestException('所选用户均已领取过该优惠券')
+      }
+
+      const users = await tx.user.findMany({
+        where: { id: { in: newUserIds } },
+        select: { id: true }
+      })
+      const validUserIds = users.map((u) => u.id)
+      if (validUserIds.length === 0) {
+        throw new BadRequestException('所选用户不存在')
+      }
+
+      const totalClaimed = await tx.userCoupon.count({ where: { couponId } })
+      const remaining = coupon.total - totalClaimed
+      if (remaining <= 0) {
+        throw new BadRequestException('该优惠券已被领完')
+      }
+      const grantCount = Math.min(validUserIds.length, remaining)
+      const grantUserIds = validUserIds.slice(0, grantCount)
+
+      await tx.userCoupon.createMany({
+        data: grantUserIds.map((userId) => ({
+          userId,
+          couponId,
+          status: 0,
+          source: 1,
+          expiresAt: coupon.validTo
+        }))
+      })
+
+      return {
+        granted: grantCount,
+        skipped: userIds.length - grantCount,
+        remaining: remaining - grantCount
+      }
     })
-    const existingUserIds = new Set(existing.map((e) => e.userId))
-    const newUserIds = userIds.filter((id) => !existingUserIds.has(id))
-    if (newUserIds.length === 0) {
-      throw new BadRequestException('所选用户均已领取过该优惠券')
-    }
-
-    const users = await this.prisma.user.findMany({
-      where: { id: { in: newUserIds } },
-      select: { id: true }
-    })
-    const validUserIds = users.map((u) => u.id)
-    if (validUserIds.length === 0) {
-      throw new BadRequestException('所选用户不存在')
-    }
-
-    const totalClaimed = await this.prisma.userCoupon.count({ where: { couponId } })
-    const remaining = coupon.total - totalClaimed
-    if (remaining <= 0) {
-      throw new BadRequestException('该优惠券已被领完')
-    }
-    const grantCount = Math.min(validUserIds.length, remaining)
-    const grantUserIds = validUserIds.slice(0, grantCount)
-
-    await this.prisma.userCoupon.createMany({
-      data: grantUserIds.map((userId) => ({
-        userId,
-        couponId,
-        status: 0,
-        source: 1,
-        expiresAt: coupon.validTo
-      }))
-    })
-
-    return {
-      granted: grantCount,
-      skipped: userIds.length - grantCount,
-      remaining: remaining - grantCount
-    }
   }
 }
