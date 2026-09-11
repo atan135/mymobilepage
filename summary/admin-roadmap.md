@@ -140,10 +140,19 @@
 
 ### 2.4 退款 / 售后
 
-- [ ] **Server** `RefundsModule`（沿用 1.7 已建的 `RefundRequest` 表）
-- [ ] 状态机：`PENDING → APPROVED → REFUNDED` / `PENDING → REJECTED`
-- [ ] **Admin** `RefundListView` + 详情 / 审批 Drawer
-- [ ] （可选）对接支付网关做真实退款，演示版可以先 mock「标记已退款」
+- [x] **Server** `RefundsModule`（前台）:`POST /api/refunds`、`GET /api/refunds/my`、`GET /api/refunds/:id`，整控制器 `JwtAuthGuard`
+- [x] **Server** `AdminRefundsModule`（后台）:5 个端点（list / detail / approve / reject / refund），全部挂 `@RequirePermission`
+- [x] **Server** 状态机 `PENDING → APPROVED → REFUNDED` / `PENDING → REJECTED`（不允许跨级跳），含迁移校验
+- [x] **Server** mark_refunded 事务：还原 product stock + 减 sales + 退回 UserCoupon（与 2.1 联动）
+- [x] **Server** 客户端订单 include `refund`，前端 OrderDetailView 一次性看到退款状态
+- [x] **Server** 后台订单 include `refund`，OrderListView Drawer 显示退款卡片
+- [x] **Admin** `RefundListView` + `RefundDetailView`：状态 tab + 关键字 + 审批 Drawer（拒绝填 remark）
+- [x] **Admin** 订单详情 Drawer 加「退款信息」卡片，点击跳退款详情
+- [x] **Client** OrderDetailView 「申请退款」按钮（仅 status ∈ {2, 3} + 已有申请时）+ Dialog
+- [x] **Client** `RefundListView` + `RefundDetailView`：状态 tab + 下拉加载
+- [x] **Client** ProfileView 加「我的退款」入口
+- [x] **Server** 权限码扩展 5 个：`refund:list/detail/approve/reject/refund`，`ADMIN_PERMISSIONS` 默认包含
+- [x] **Docs** `docs/20-管理后台/11-退款与售后.md` 按业务模块文档统一模板补全（含 3 张时序图）
 
 ### 2.5 数据导出
 
@@ -207,4 +216,5 @@
 ---
 
 > 最后更新：Phase 1 主体（6 节子模块）已完成并勾选；剩 1.1 主题色、1.10 完整 e2e 流程未完成；Phase 2 未启动。roadmap 编辑权限保留，后续如要新增 / 删除模块，直接编辑本文件即可。
+
 
