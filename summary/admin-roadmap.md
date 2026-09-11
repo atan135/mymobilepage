@@ -194,9 +194,18 @@
 
 ### 2.6 操作日志
 
-- [ ] **Prisma 新表** `AuditLog`：`id / adminId / action / resource / resourceId / payload(JSON) / ip / userAgent / createdAt`
-- [ ] **Server** 全局拦截器：自动捕获写操作（POST/PATCH/DELETE）写日志
-- [ ] **Admin** `AuditLogView` + 筛选（操作人 / 模块 / 时间）
+- [x] **Prisma 新表** `AuditLog`：`id / adminId / action / resource / resourceId / payload(JSON) / ip / userAgent / createdAt`
+- [x] **Server** 全局拦截器：自动捕获写操作（POST/PATCH/DELETE）写日志
+- [x] **Admin** `AuditLogView` + 筛选（操作人 / 模块 / 时间）
+
+> 实现要点：
+> - migration `20260911134947_phase2_audit_logs` 已应用；`audit_logs` 表 + AdminUser 反向关联 + 2 索引
+> - 全局 `APP_INTERCEPTOR` 注册 `AuditInterceptor`；只覆盖 POST/PATCH/PUT/DELETE，GET 查询不写日志
+> - 旁路写日志（`tap` 异步），不 await、不抛错，避免日志失败回滚业务；失败请求也写（action 后缀 `_failed`）
+> - resource / resourceId / action 从 URL 启发式解析；优先用响应 `data.id`
+> - payload 敏感字段过滤：`password / passwordHash / newPassword / oldPassword / token / accessToken / refreshToken` 替换为 `***`
+> - 权限码：`audit:view`（用 types.ts 占位的那个）
+> - seed 写 14 条 demo 日志（横跨 5~360 分钟前，覆盖 login / create / update / approve / refund / block / grant / ship / delete / threshold 等动作）
 
 ### 2.7 系统设置
 
