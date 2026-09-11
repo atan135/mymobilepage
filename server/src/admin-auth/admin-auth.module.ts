@@ -1,16 +1,18 @@
-import { Module } from '@nestjs/common'
-import { JwtModule } from '@nestjs/jwt'
-import { PassportModule } from '@nestjs/passport'
-import { ConfigModule, ConfigService } from '@nestjs/config'
+import { Global, Module } from '@nestjs/common'
 import { APP_GUARD } from '@nestjs/core'
+import { JwtModule } from '@nestjs/jwt'
+import { ConfigModule, ConfigService } from '@nestjs/config'
 import { AdminAuthService } from './admin-auth.service'
 import { AdminAuthController } from './admin-auth.controller'
-import { AdminJwtStrategy } from './strategies/admin-jwt.strategy'
 import { PermissionsGuard } from './guards/permissions.guard'
 
+/**
+ * 全局模块：AdminJwtAuthGuard 和 PermissionsGuard 用到的 JwtService / ConfigService
+ * 不需要在每个 admin 子模块重复 import。
+ */
+@Global()
 @Module({
   imports: [
-    PassportModule.register({ defaultStrategy: 'admin-jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -23,13 +25,7 @@ import { PermissionsGuard } from './guards/permissions.guard'
     })
   ],
   controllers: [AdminAuthController],
-  providers: [
-    AdminAuthService,
-    AdminJwtStrategy,
-    PermissionsGuard,
-    // 全局启用 PermissionsGuard（每个路由可以单独用 @RequirePermission 标）
-    { provide: APP_GUARD, useClass: PermissionsGuard }
-  ],
+  providers: [AdminAuthService, PermissionsGuard, { provide: APP_GUARD, useClass: PermissionsGuard }],
   exports: [AdminAuthService, JwtModule]
 })
 export class AdminAuthModule {}

@@ -11,7 +11,7 @@ import {
 import type { Request } from 'express'
 import { AdminAuthService } from './admin-auth.service'
 import { AdminLoginDto } from './dto/login.dto'
-import { AdminJwtAuthGuard } from './strategies/admin-jwt-auth.guard'
+import { Public } from './decorators/public.decorator'
 import type { AdminJwtUser } from './strategies/admin-jwt.strategy'
 
 interface AuthedRequest extends Request {
@@ -22,20 +22,19 @@ interface AuthedRequest extends Request {
 export class AdminAuthController {
   constructor(private readonly auth: AdminAuthService) {}
 
+  @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
   login(@Body() dto: AdminLoginDto) {
     return this.auth.login(dto)
   }
 
-  @UseGuards(AdminJwtAuthGuard)
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   logout() {
     return this.auth.logout()
   }
 
-  @UseGuards(AdminJwtAuthGuard)
   @Get('profile')
   profile(@Req() req: AuthedRequest) {
     return this.auth.getProfile(req.user.sub)

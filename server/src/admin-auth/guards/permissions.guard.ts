@@ -2,10 +2,14 @@ import {
   CanActivate,
   ExecutionContext,
   ForbiddenException,
-  Injectable
+  Injectable,
+  UnauthorizedException
 } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { JwtService } from '@nestjs/jwt'
 import { Reflector } from '@nestjs/core'
 import { PERMISSIONS_KEY } from '../decorators/require-permission.decorator'
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator'
 import type { AdminPermission } from '../types'
 
 export interface AdminAuthedUser {
@@ -17,27 +21,51 @@ export interface AdminAuthedUser {
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
-  constructor(private readonly reflector: Reflector) {}
+  constructor(
+    private readonly reflector: Reflector,
+    private readonly jwt: JwtService,
+    private readonly config: ConfigService
+  ) {}
 
-  canActivate(ctx: ExecutionContext): boolean {
+  async canActivate(ctx: ExecutionContext): Promise<boolean> {
+    // 0. 公开路由直接放行
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [ctx.getHandler(), ctx.getClass()])
+    if (isPublic) return true
+
+    // 1. 校验 Bearer Token + 把 payload 挂到 req.user
+    const req = ctx.switchToHttp().getRequest<{ user?: AdminAuthedUser; headers: Record<string, string | undefined> }>()
+    const auth = req.headers['authorization']
+    if (!auth?.startsWith('Bearer ')) {
+      throw new UnauthorizedException('未登录或 Token 缺失')
+    }
+    let payload: AdminAuthedUser
+    try {
+      const decoded = await this.jwt.verifyAsync(auth.slice(7), {
+        secret: this.config.get<string>('JWT_ADMIN_SECRET') ?? 'dev-admin-secret'
+      })
+      payload = {
+        sub: decoded.sub,
+        username: decoded.username,
+        role: decoded.role,
+        permissions: decoded.permissions ?? []
+      }
+      req.user = payload
+    } catch {
+      throw new UnauthorizedException('Token 无效或已过期')
+    }
+
+    // 2. 检查 @RequirePermission（没有标 = 只要求登录，已通过上面）
     const required = this.reflector.getAllAndOverride<AdminPermission[]>(
       PERMISSIONS_KEY,
       [ctx.getHandler(), ctx.getClass()]
     )
-
-    // 没标 @RequirePermission() 表示只要求登录（其它 Guard 负责登录校验）
     if (!required || required.length === 0) return true
 
-    const req = ctx.switchToHttp().getRequest<{ user?: AdminAuthedUser }>()
-    const user = req.user
-    if (!user) throw new ForbiddenException('未登录')
+    if (payload.permissions.includes('*')) return true
 
-    // 通配权限
-    if (user.permissions.includes('*')) return true
-
-    const ok = required.some((p) => user.permissions.includes(p))
+    const ok = required.some((p) => payload.permissions.includes(p))
     if (!ok) {
-      throw new ForbiddenException(`缺少权限：${required.join(' / ')}`)
+      throw new ForbiddenException(`缺少权限: ${required.join(' / ')}`)
     }
     return true
   }
