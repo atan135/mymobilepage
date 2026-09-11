@@ -2,10 +2,7 @@ import { ofetch } from 'ofetch'
 
 /**
  * 通用请求实例（ofetch 封装）。
- *
- * 当前阶段所有接口走本地 mock，未真正发起网络请求。
- * 等后端（NestJS）就绪后，只需把 mock 函数替换为真实调用即可：
- *   export const getProducts = (params) => request<Product[]>('/products', { query: params })
+ * baseURL = '/api'，开发期通过 Vite Proxy 转发到后端 :3000。
  */
 export const request = ofetch.create({
   baseURL: '/api',
@@ -26,6 +23,4 @@ export const request = ofetch.create({
   }
 })
 
-/** 模拟网络延迟，方便观察 loading 态 */
-export const delay = (ms = 300) =>
-  new Promise<void>((resolve) => setTimeout(resolve, ms))
+

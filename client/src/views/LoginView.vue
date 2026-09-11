@@ -72,7 +72,6 @@ async function onSubmit() {
         </van-button>
       </div>
 
-      <div class="hint">演示版：任意非空用户名 / 密码均可登录</div>
     </van-form>
   </div>
 </template>
@@ -115,11 +114,5 @@ async function onSubmit() {
 }
 .submit {
   margin: 24px 16px 0;
-}
-.hint {
-  text-align: center;
-  color: #969799;
-  font-size: 12px;
-  margin-top: 16px;
 }
 </style>
