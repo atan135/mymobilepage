@@ -6,6 +6,7 @@ import {
 import { Prisma } from '@prisma/client'
 import { PrismaService } from '../prisma/prisma.service'
 import { CouponsService } from '../coupons/coupons.service'
+import { InventoryService, type InventoryType } from '../inventory/inventory.service'
 import type { PaginatedResult } from '../common/dto/pagination.dto'
 import {
   CreateOrderDto,
@@ -17,7 +18,8 @@ import {
 export class ClientOrdersService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly couponsSvc: CouponsService
+    private readonly couponsSvc: CouponsService,
+    private readonly inventory: InventoryService
   ) {}
 
   /**
@@ -83,12 +85,25 @@ export class ClientOrdersService {
 
     const order = await this.prisma.$transaction(async (tx) => {
       for (const item of items) {
-        await tx.product.update({
+        const before = await tx.product.findUnique({
+          where: { id: item.productId },
+          select: { stock: true }
+        })
+        if (!before) throw new BadRequestException(`商品不存在: ${item.productId}`)
+        const after = await tx.product.update({
           where: { id: item.productId },
           data: {
             stock: { decrement: item.quantity },
             sales: { increment: item.quantity }
           }
+        })
+        await this.inventory.recordChange(tx, {
+          productId: item.productId,
+          type: 2, // OUTBOUND
+          quantity: -item.quantity,
+          beforeStock: before.stock,
+          afterStock: after.stock,
+          reason: `订单 ${orderNo} 出库`
         })
       }
 
@@ -194,12 +209,25 @@ export class ClientOrdersService {
 
     await this.prisma.$transaction(async (tx) => {
       for (const item of order.items) {
-        await tx.product.update({
+        const before = await tx.product.findUnique({
+          where: { id: item.productId },
+          select: { stock: true }
+        })
+        if (!before) continue
+        const after = await tx.product.update({
           where: { id: item.productId },
           data: {
             stock: { increment: item.quantity },
             sales: { decrement: item.quantity }
           }
+        })
+        await this.inventory.recordChange(tx, {
+          productId: item.productId,
+          type: 5, // CANCEL_IN
+          quantity: item.quantity,
+          beforeStock: before.stock,
+          afterStock: after.stock,
+          reason: `订单 ${order.orderNo} 取消退库`
         })
       }
 

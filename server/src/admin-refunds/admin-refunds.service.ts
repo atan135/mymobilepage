@@ -4,6 +4,7 @@ import {
   NotFoundException
 } from '@nestjs/common'
 import { Prisma } from '@prisma/client'
+import { InventoryService } from '../inventory/inventory.service'
 import { PrismaService } from '../prisma/prisma.service'
 import type { PaginatedResult } from '../common/dto/pagination.dto'
 import {
@@ -15,7 +16,10 @@ import {
 
 @Injectable()
 export class AdminRefundsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly inventory: InventoryService
+  ) {}
 
   async list(q: QueryRefundDto): Promise<PaginatedResult<unknown>> {
     const page = q.page ?? 1
@@ -116,7 +120,7 @@ export class AdminRefundsService {
    *   2) 关联 UserCoupon 退回未使用 + 清空 orderId
    *   3) refund.status → 3
    */
-  async markRefunded(id: number) {
+  async markRefunded(id: number, operatorId: number) {
     const r = await this.findOne(id)
     this.assertTransition(r.status, 3)
 
@@ -128,12 +132,26 @@ export class AdminRefundsService {
 
     await this.prisma.$transaction(async (tx) => {
       for (const item of order.items) {
-        await tx.product.update({
+        const before = await tx.product.findUnique({
+          where: { id: item.productId },
+          select: { stock: true }
+        })
+        if (!before) continue
+        const after = await tx.product.update({
           where: { id: item.productId },
           data: {
             stock: { increment: item.quantity },
             sales: { decrement: item.quantity }
           }
+        })
+        await this.inventory.recordChange(tx, {
+          productId: item.productId,
+          type: 4, // REFUND_IN
+          quantity: item.quantity,
+          beforeStock: before.stock,
+          afterStock: after.stock,
+          reason: `退款 #${id} 入库`,
+          operatorId
         })
       }
 

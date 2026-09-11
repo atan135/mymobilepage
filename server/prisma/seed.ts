@@ -70,6 +70,8 @@ async function main(): Promise<void> {
   for (let i = 0; i < 24; i++) {
     const category = created[i % created.length]
     const seed = `p${i + 1}`
+    // 演示预警：最后 3 个商品（i>=21）设高阈值，制造低库存样本
+    const isWarningSample = i >= 21
     products.push({
       title: `${category.name} · 热销单品 #${i + 1}`,
       price: Number((19.9 + i * 7.5).toFixed(2)),
@@ -79,6 +81,7 @@ async function main(): Promise<void> {
       description: '这是一段商品介绍，描述商品的核心卖点、规格参数与适用场景，帮助你快速了解商品。',
       sales: 100 + i * 31,
       stock: 100 - i,
+      threshold: isWarningSample ? 90 : 10,
       categoryId: category.id
     })
   }

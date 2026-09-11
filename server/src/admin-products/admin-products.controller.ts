@@ -8,8 +8,10 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards
 } from '@nestjs/common'
+import type { Request } from 'express'
 import { RequirePermission } from '../admin-auth/decorators/require-permission.decorator'
 import { AdminProductsService } from './admin-products.service'
 import {
@@ -64,9 +66,10 @@ export class AdminProductsController {
   @Patch(':id/stock')
   adjustStock(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateProductStockDto
+    @Body() dto: UpdateProductStockDto,
+    @Req() req: Request & { user: { sub: number } }
   ) {
-    return this.svc.adjustStock(id, dto)
+    return this.svc.adjustStock(id, dto, req.user.sub)
   }
 
   @RequirePermission('product:delete')

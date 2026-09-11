@@ -21,6 +21,14 @@ export interface DashboardOverview {
     createdAt: Date
     user: { username: string; nickname: string | null }
   }>
+  lowStockCount: number
+  lowStockProducts: Array<{
+    id: number
+    title: string
+    cover: string
+    stock: number
+    threshold: number
+  }>
 }
 
 export interface SalesTrendPoint {
@@ -34,6 +42,7 @@ export class AdminDashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
   async overview(): Promise<DashboardOverview> {
+    // 预警聚合：status=1 上架商品的 stock<=threshold
     const startOfToday = this.startOfDay(new Date())
 
     const [todayOrderCount, todayGmvAgg, totalUsers, pendingOrders, topRows] =
@@ -89,13 +98,30 @@ export class AdminDashboardService {
       user: { username: o.user.username, nickname: o.user.nickname }
     }))
 
+    // 低库存：单独查询（与上面 transaction 并行后做）
+    const onShelf = await this.prisma.product.findMany({
+      where: { status: 1 },
+      select: { id: true, title: true, cover: true, stock: true, threshold: true }
+    })
+    const lowStockAll = onShelf.filter((p) => p.stock <= p.threshold)
+    lowStockAll.sort((a, b) => (b.threshold - b.stock) - (a.threshold - a.stock))
+    const lowStockProducts = lowStockAll.slice(0, 5).map((p) => ({
+      id: p.id,
+      title: p.title,
+      cover: p.cover,
+      stock: p.stock,
+      threshold: p.threshold
+    }))
+
     return {
       todayOrders: todayOrderCount,
       todayGmv: Number((todayGmvAgg._sum.totalAmount ?? 0).toFixed(2)),
       totalUsers,
       pendingOrders,
       topProducts,
-      pendingOrderList
+      pendingOrderList,
+      lowStockCount: lowStockAll.length,
+      lowStockProducts
     }
   }
 

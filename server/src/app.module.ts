@@ -16,6 +16,7 @@ import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module'
 import { AdminCouponsModule } from './admin-coupons/admin-coupons.module'
 import { AdminRefundsModule } from './admin-refunds/admin-refunds.module'
 import { AdminReviewsModule } from './admin-reviews/admin-reviews.module'
+import { AdminInventoryModule } from './admin-inventory/admin-inventory.module'
 import { InventoryModule } from './inventory/inventory.module'
 import { ClientBannersModule } from './client-banners/client-banners.module'
 import { ClientOrdersModule } from './client-orders/client-orders.module'
@@ -41,6 +42,7 @@ import { RefundsModule } from './refunds/refunds.module'
     AdminCouponsModule,
     AdminRefundsModule,
     AdminReviewsModule,
+    AdminInventoryModule,
     InventoryModule,
     ClientBannersModule,
     ClientOrdersModule,

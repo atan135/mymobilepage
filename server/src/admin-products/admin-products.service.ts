@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
+import { InventoryService, type InventoryType } from '../inventory/inventory.service'
 import {
   CreateProductDto,
   UpdateProductDto,
@@ -10,7 +11,10 @@ import type { PaginatedResult } from '../common/dto/pagination.dto'
 
 @Injectable()
 export class AdminProductsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly inventory: InventoryService
+  ) {}
 
   async list(q: QueryProductDto): Promise<PaginatedResult<unknown>> {
     const page = q.page ?? 1
@@ -93,9 +97,28 @@ export class AdminProductsService {
     return this.prisma.product.update({ where: { id }, data: { status } })
   }
 
-  async adjustStock(id: number, dto: UpdateProductStockDto) {
-    await this.findOne(id)
-    return this.prisma.product.update({ where: { id }, data: { stock: dto.stock } })
+  async adjustStock(id: number, dto: UpdateProductStockDto, operatorId: number) {
+    const before = await this.findOne(id)
+    const beforeStock = before.stock
+    const afterStock = dto.stock
+    if (afterStock === beforeStock) {
+      return before
+    }
+    const diff = afterStock - beforeStock
+    const type: InventoryType = 3 // ADJUST
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.product.update({ where: { id }, data: { stock: afterStock } })
+      await this.inventory.recordChange(tx, {
+        productId: id,
+        type,
+        quantity: diff,
+        beforeStock,
+        afterStock,
+        reason: '后台调整库存',
+        operatorId
+      })
+      return updated
+    })
   }
 
   async remove(id: number) {

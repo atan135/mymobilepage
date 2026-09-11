@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { PassportModule } from '@nestjs/passport'
 import { AuthModule } from '../auth/auth.module'
 import { CouponsModule } from '../coupons/coupons.module'
+import { InventoryModule } from '../inventory/inventory.module'
 import { ClientOrdersController } from './client-orders.controller'
 import { ClientOrdersService } from './client-orders.service'
 
@@ -22,7 +23,8 @@ import { ClientOrdersService } from './client-orders.service'
   imports: [
     AuthModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    CouponsModule
+    CouponsModule,
+    InventoryModule
   ],
   providers: [ClientOrdersService],
   controllers: [ClientOrdersController]

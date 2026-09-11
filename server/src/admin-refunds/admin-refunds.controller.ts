@@ -5,8 +5,10 @@ import {
   Param,
   ParseIntPipe,
   Patch,
-  Query
+  Query,
+  Req
 } from '@nestjs/common'
+import type { Request } from 'express'
 import { RequirePermission } from '../admin-auth/decorators/require-permission.decorator'
 import { AdminRefundsService } from './admin-refunds.service'
 import { QueryRefundDto, RejectRefundDto } from './dto/refund.dto'
@@ -44,7 +46,10 @@ export class AdminRefundsController {
 
   @RequirePermission('refund:refund')
   @Patch(':id/refund')
-  markRefunded(@Param('id', ParseIntPipe) id: number) {
-    return this.svc.markRefunded(id)
+  markRefunded(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: Request & { user: { sub: number } }
+  ) {
+    return this.svc.markRefunded(id, req.user.sub)
   }
 }
