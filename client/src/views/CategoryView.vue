@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getCategories, getProducts } from '../api/product'
-import type { Product, Category } from '../mock/data'
+import {
+  listCategories,
+  listProducts,
+  type Category,
+  type Product
+} from '../api/product'
 
 const router = useRouter()
 
@@ -14,7 +18,7 @@ const finished = ref(false)
 const page = ref(1)
 
 async function loadCategories() {
-  categories.value = await getCategories()
+  categories.value = await listCategories()
   if (categories.value.length > 0) activeId.value = categories.value[0].id
 }
 
@@ -26,7 +30,7 @@ async function loadProducts(reset = false) {
   }
   loading.value = true
   try {
-    const res = await getProducts({
+    const res = await listProducts({
       categoryId: activeId.value,
       page: page.value,
       pageSize: 10
@@ -84,7 +88,7 @@ function onLoad() {
             v-for="p in products"
             :key="p.id"
             :title="p.title"
-            :desc="p.description"
+            :desc="p.description ?? ''"
             :thumb="p.cover"
             :price="p.price"
             :origin-price="p.originalPrice"

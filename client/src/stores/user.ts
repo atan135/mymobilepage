@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import * as authApi from '../api/auth'
-import type { User } from '../mock/data'
+import type { User } from '../api/auth'
 
 export const useUserStore = defineStore('user', () => {
   const token = ref<string>(localStorage.getItem('token') || '')
@@ -22,6 +22,8 @@ export const useUserStore = defineStore('user', () => {
     await authApi.logout()
     token.value = ''
     user.value = null
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
   }
 
   return { token, user, isLoggedIn, login, logout }

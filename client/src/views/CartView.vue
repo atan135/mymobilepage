@@ -1,64 +1,97 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { showToast, showConfirmDialog } from 'vant'
-import { getCart } from '../api/product'
-import type { CartItem } from '../mock/data'
+import { getProduct, type Product } from '../api/product'
+import { useCartStore } from '../stores/cart'
 
-const items = ref<CartItem[]>([])
-const checked = ref<boolean[]>([])
+const router = useRouter()
+const cart = useCartStore()
+
+interface Row {
+  product: Product
+  quantity: number
+  selected: boolean
+}
+
+const rows = ref<Row[]>([])
 const loading = ref(false)
 
-async function load() {
+async function hydrate() {
   loading.value = true
   try {
-    items.value = await getCart()
-    checked.value = items.value.map((it) => it.selected)
+    const products = await Promise.all(
+      cart.items.map((it) => getProduct(it.productId))
+    )
+    rows.value = cart.items.map((it, i) => ({
+      product: products[i],
+      quantity: it.quantity,
+      selected: it.selected
+    }))
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : '加载购物车失败'
+    showToast(msg)
   } finally {
     loading.value = false
   }
 }
 
-onMounted(load)
+onMounted(hydrate)
+watch(
+  () => cart.items.length,
+  () => hydrate()
+)
 
 const allChecked = computed({
   get: () =>
-    checked.value.length > 0 && checked.value.every((v) => v),
+    rows.value.length > 0 && rows.value.every((r) => r.selected),
   set: (val: boolean) => {
-    checked.value = items.value.map(() => val)
+    rows.value.forEach((r) => {
+      r.selected = val
+    })
+    rows.value.forEach((r) => {
+      const it = cart.items.find((x) => x.productId === r.product.id)
+      if (it) it.selected = val
+    })
   }
 })
 
 const totalPrice = computed(() =>
-  items.value
-    .filter((_, i) => checked.value[i])
-    .reduce((sum, it) => sum + it.product.price * it.quantity, 0)
+  rows.value
+    .filter((r) => r.selected)
+    .reduce((sum, r) => sum + r.product.price * r.quantity, 0)
     .toFixed(2)
 )
 
-function inc(i: number) {
-  items.value[i].quantity += 1
-}
-function dec(i: number) {
-  if (items.value[i].quantity > 1) items.value[i].quantity -= 1
+function inc(row: Row) {
+  const next = row.quantity + 1
+  row.quantity = next
+  cart.setQuantity(row.product.id, next)
 }
 
-async function removeItem(i: number) {
+function dec(row: Row) {
+  if (row.quantity <= 1) return
+  const next = row.quantity - 1
+  row.quantity = next
+  cart.setQuantity(row.product.id, next)
+}
+
+async function removeRow(row: Row) {
   try {
     await showConfirmDialog({ title: '确认删除该商品？' })
-    items.value.splice(i, 1)
-    checked.value.splice(i, 1)
-    showToast('已删除')
   } catch {
-    /* cancelled */
+    return
   }
+  cart.remove(row.product.id)
+  showToast('已删除')
 }
 
 function checkout() {
-  if (items.value.filter((_, i) => checked.value[i]).length === 0) {
+  if (rows.value.filter((r) => r.selected).length === 0) {
     showToast('请先选择商品')
     return
   }
-  showToast(`已下单，合计 ¥${totalPrice.value}`)
+  router.push('/order/confirm')
 }
 </script>
 
@@ -68,29 +101,30 @@ function checkout() {
 
     <div class="content" v-if="!loading">
       <van-empty
-        v-if="items.length === 0"
+        v-if="rows.length === 0"
         description="购物车空空如也，去首页逛逛吧"
       />
 
       <template v-else>
         <van-card
-          v-for="(it, i) in items"
-          :key="it.productId"
-          :title="it.product.title"
-          :desc="`已售 ${it.product.sales}`"
-          :thumb="it.product.cover"
-          :price="it.product.price"
+          v-for="r in rows"
+          :key="r.product.id"
+          :title="r.product.title"
+          :desc="`库存 ${r.product.stock} · 已售 ${r.product.sales}`"
+          :thumb="r.product.cover"
+          :price="r.product.price"
         >
           <template #thumb>
-            <van-checkbox v-model="checked[i]" />
-            <img class="thumb-img" :src="it.product.cover" />
+            <van-checkbox v-model="r.selected" />
+            <img class="thumb-img" :src="r.product.cover" :alt="r.product.title" />
           </template>
           <template #num>
             <van-stepper
-              v-model="items[i].quantity"
+              :model-value="r.quantity"
               :min="1"
-              :max="99"
-              @change="inc(i)"
+              :max="Math.max(1, r.product.stock)"
+              @plus="inc(r)"
+              @minus="dec(r)"
             />
           </template>
           <template #bottom>
@@ -98,7 +132,7 @@ function checkout() {
               size="mini"
               type="danger"
               plain
-              @click="removeItem(i)"
+              @click="removeRow(r)"
             >
               删除
             </van-button>
@@ -108,7 +142,7 @@ function checkout() {
     </div>
 
     <van-submit-bar
-      v-if="items.length > 0"
+      v-if="rows.length > 0"
       :price="Number(totalPrice) * 100"
       button-text="结算"
       @submit="checkout"

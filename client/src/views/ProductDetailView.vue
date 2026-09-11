@@ -2,20 +2,20 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
-import { getProductById } from '../api/product'
-import type { Product } from '../mock/data'
+import { getProduct, type Product } from '../api/product'
+import { useCartStore } from '../stores/cart'
 
 const route = useRoute()
 const router = useRouter()
+const cart = useCartStore()
 const product = ref<Product | null>(null)
 const loading = ref(true)
-const skuIndex = ref(0)
 const count = ref(1)
 
 async function load(id: number) {
   loading.value = true
   try {
-    product.value = await getProductById(id)
+    product.value = await getProduct(id)
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : '加载失败'
     showToast(msg)
@@ -32,10 +32,17 @@ watch(
 )
 
 function addToCart() {
-  showToast(`已加入购物车 ×${count.value}`)
+  if (!product.value) return
+  cart.add(product.value.id, count.value)
+  showToast({ type: 'success', message: `已加入购物车 ×${count.value}` })
 }
+
 function buyNow() {
-  showToast(`立即购买 ×${count.value}`)
+  if (!product.value) return
+  router.push({
+    path: '/order/confirm',
+    query: { productId: product.value.id, quantity: count.value }
+  })
 }
 </script>
 
@@ -67,17 +74,16 @@ function buyNow() {
         <div class="info">
           <div class="price">
             <span class="now">¥{{ product.price }}</span>
-            <span class="origin">¥{{ product.originalPrice }}</span>
+            <span v-if="product.originalPrice" class="origin">¥{{ product.originalPrice }}</span>
           </div>
           <div class="title">{{ product.title }}</div>
           <div class="sales">已售 {{ product.sales }} · 库存 {{ product.stock }}</div>
         </div>
 
         <van-cell-group inset title="规格">
-          <van-cell title="款式" :value="`款式 ${skuIndex + 1}`" is-link />
           <van-cell title="数量">
             <template #value>
-              <van-stepper v-model="count" :min="1" :max="product.stock" />
+              <van-stepper v-model="count" :min="1" :max="Math.max(1, product.stock)" />
             </template>
           </van-cell>
         </van-cell-group>

@@ -14,10 +14,18 @@ const avatar = computed(
   () => userStore.user?.avatar ?? 'https://picsum.photos/seed/default/200/200'
 )
 
-const menus = [
-  { icon: 'orders-o', label: '我的订单', desc: '查看全部订单' },
-  { icon: 'balance-o', label: '优惠券', desc: '0 张可用' },
-  { icon: 'location-o', label: '收货地址', desc: '管理收货地址' },
+interface MenuRow {
+  icon: string
+  label: string
+  desc: string
+  to?: string
+  action?: () => void | Promise<void>
+}
+
+const menus: MenuRow[] = [
+  { icon: 'orders-o', label: '我的订单', desc: '查看全部订单', to: '/order/list' },
+  { icon: 'balance-o', label: '优惠券', desc: '0 张可用（Phase 2 待开发）' },
+  { icon: 'location-o', label: '收货地址', desc: '管理收货地址（Phase 2 待开发）' },
   { icon: 'service-o', label: '客户服务', desc: '联系客服 / 反馈' }
 ]
 
@@ -33,6 +41,11 @@ async function onLogout() {
   } catch {
     /* cancelled */
   }
+}
+
+function onMenu(m: MenuRow) {
+  if (m.to) router.push(m.to)
+  else showToast(`${m.label} 暂未开放`)
 }
 </script>
 
@@ -57,6 +70,7 @@ async function onLogout() {
           :label="m.desc"
           :icon="m.icon"
           is-link
+          @click="onMenu(m)"
         />
       </van-cell-group>
 

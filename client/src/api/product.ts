@@ -1,48 +1,47 @@
-import { delay } from './request'
-import {
-  mockBanners,
-  mockCategories,
-  mockProducts,
-  mockCart,
-  type Category,
-  type Product,
-  type CartItem
-} from '../mock/data'
+import { request } from './request'
 
-export async function getBanners(): Promise<string[]> {
-  await delay(120)
-  return mockBanners
+export interface Category {
+  id: number
+  name: string
+  icon: string | null
+  sort: number
 }
 
-export async function getCategories(): Promise<Category[]> {
-  await delay(120)
-  return mockCategories
+export interface Product {
+  id: number
+  title: string
+  price: number
+  originalPrice?: number
+  cover: string
+  sales: number
+  categoryId: number
+  description: string
+  images: string[]
+  stock: number
+  status: number
 }
 
-export async function getProducts(
-  params: { categoryId?: number; page?: number; pageSize?: number } = {}
-): Promise<{ list: Product[]; total: number; hasMore: boolean }> {
-  await delay(200)
-  const { categoryId, page = 1, pageSize = 10 } = params
-  let list = mockProducts
-  if (categoryId) list = list.filter((p) => p.categoryId === categoryId)
-  const start = (page - 1) * pageSize
-  const paged = list.slice(start, start + pageSize)
-  return {
-    list: paged,
-    total: list.length,
-    hasMore: start + pageSize < list.length
-  }
+export interface PaginatedProducts {
+  list: Product[]
+  total: number
+  page: number
+  pageSize: number
+  hasMore: boolean
 }
 
-export async function getProductById(id: number): Promise<Product> {
-  await delay(150)
-  const p = mockProducts.find((p) => p.id === id)
-  if (!p) throw new Error('商品不存在')
-  return p
+export function listCategories() {
+  return request<Category[]>('/categories')
 }
 
-export async function getCart(): Promise<CartItem[]> {
-  await delay(120)
-  return mockCart
+export function listProducts(params: {
+  categoryId?: number
+  page?: number
+  pageSize?: number
+  keyword?: string
+} = {}) {
+  return request<PaginatedProducts>('/products', { query: params })
+}
+
+export function getProduct(id: number) {
+  return request<Product>(`/products/${id}`)
 }

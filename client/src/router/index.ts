@@ -48,6 +48,30 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '商品详情', requiresAuth: true }
   },
   {
+    path: '/order/confirm',
+    name: 'order-confirm',
+    component: () => import('../views/OrderConfirmView.vue'),
+    meta: { title: '确认订单', requiresAuth: true }
+  },
+  {
+    path: '/order/success',
+    name: 'order-success',
+    component: () => import('../views/OrderSuccessView.vue'),
+    meta: { title: '下单成功', requiresAuth: true }
+  },
+  {
+    path: '/order/list',
+    name: 'order-list',
+    component: () => import('../views/OrderListView.vue'),
+    meta: { title: '我的订单', requiresAuth: true }
+  },
+  {
+    path: '/order/detail',
+    name: 'order-detail',
+    component: () => import('../views/OrderDetailView.vue'),
+    meta: { title: '订单详情', requiresAuth: true }
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/home'
   }
