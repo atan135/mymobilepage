@@ -53,6 +53,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '评价管理', icon: 'ChatDotRound', permission: 'review:list' }
       },
       {
+        path: 'audit-logs',
+        name: 'admin-audit-logs',
+        component: () => import('../views/AuditLogListView.vue'),
+        meta: { title: '操作日志', icon: 'Document', permission: 'audit:view' }
+      },
+            {
         path: 'inventory/logs',
         name: 'admin-inventory-logs',
         component: () => import('../views/InventoryLogListView.vue'),
