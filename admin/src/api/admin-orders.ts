@@ -63,9 +63,19 @@ export interface OrderReceiver {
   address: string
 }
 
+
+
+export interface OrderRefundInfo {
+  id: number
+  status: number
+  amount: number
+  reason: string
+}
+
 export interface OrderDetail extends Omit<OrderListItem, 'itemCount'> {
   items: OrderItem[]
   receiver: OrderReceiver
+  refund: OrderRefundInfo | null
 }
 
 export interface OrderQuery {

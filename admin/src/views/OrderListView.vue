@@ -25,6 +25,12 @@ const query = reactive({
   pageSize: 10
 })
 
+const router = useRouter()
+
+function goRefund(id: number) {
+  router.push({ name: 'admin-refund-detail', params: { id: String(id) } })
+}
+
 const tabs = [
   { label: '全部', value: undefined as OrderStatus | undefined },
   ...ORDER_STATUSES.map((s) => ({ label: ORDER_STATUS_LABELS[s], value: s }))
@@ -322,6 +328,29 @@ function asOrder(row: unknown): OrderListItem {
             <span class="grand">订单总额：¥{{ Number(detail.totalAmount).toFixed(2) }}</span>
           </div>
 
+
+          <template v-if="detail.refund">
+            <h4 class="block-title">退款申请</h4>
+            <el-descriptions :column="2" border size="small">
+              <el-descriptions-item label="退款 ID">
+                <el-link type="primary" :underline="false" @click="goRefund(detail.refund.id)">
+                  #{{ detail.refund.id }}
+                </el-link>
+              </el-descriptions-item>
+              <el-descriptions-item label="状态">
+                <el-tag :type="REFUND_STATUS_TAG_TYPE[detail.refund.status as RefundStatus]">
+                  {{ REFUND_STATUS_LABELS[detail.refund.status as RefundStatus] }}
+                </el-tag>
+              </el-descriptions-item>
+              <el-descriptions-item label="退款金额">
+                <span class="refund-amount">¥{{ detail.refund.amount.toFixed(2) }}</span>
+              </el-descriptions-item>
+              <el-descriptions-item label="原因" :span="2">
+                {{ detail.refund.reason }}
+              </el-descriptions-item>
+            </el-descriptions>
+          </template>
+
           <div class="actions-row">
               <el-button
                 v-if="detail.status === 1"
@@ -392,4 +421,5 @@ function asOrder(row: unknown): OrderListItem {
 }
 .totals .grand { color: #f56c6c; font-weight: 600; }
 .actions-row { display: flex; gap: 8px; padding-top: 16px; }
+.refund-amount { color: #f56c6c; font-weight: 600; }
 </style>

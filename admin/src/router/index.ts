@@ -47,6 +47,18 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '订单管理', icon: 'List', permission: 'order:list' }
       },
       {
+        path: 'refunds',
+        name: 'admin-refunds',
+        component: () => import('../views/RefundListView.vue'),
+        meta: { title: '退款审批', icon: 'Refresh', permission: 'refund:list' }
+      },
+      {
+        path: 'refunds/:id',
+        name: 'admin-refund-detail',
+        component: () => import('../views/RefundDetailView.vue'),
+        meta: { title: '退款详情', icon: 'Refresh', permission: 'refund:detail' }
+      },
+      {
         path: 'banners',
         name: 'admin-banners',
         component: () => import('../views/BannerListView.vue'),
@@ -106,4 +118,3 @@ router.beforeEach((to) => {
 })
 
 export default router
-

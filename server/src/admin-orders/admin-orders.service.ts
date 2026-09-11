@@ -66,7 +66,8 @@ export class AdminOrdersService {
         user: {
           select: { id: true, username: true, nickname: true, phone: true }
         },
-        items: true
+        items: true,
+        refund: true
       }
     })
     if (!o) throw new NotFoundException('订单不存在')
@@ -157,3 +158,4 @@ export class AdminOrdersService {
     return { name: '', phone: '', address: '' }
   }
 }
+
