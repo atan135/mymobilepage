@@ -30,6 +30,7 @@ const ADMIN_PERMISSIONS = [
   'refund:list', 'refund:detail', 'refund:approve',
   'refund:reject', 'refund:refund',
   'inventory:list', 'inventory:warning',
+  'export:orders', 'export:products', 'export:inventory_logs',
   'review:list', 'review:detail', 'review:approve',
   'review:block', 'review:reply'
 ]

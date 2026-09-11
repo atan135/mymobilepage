@@ -16,6 +16,6 @@ export type AdminPermission =
   | 'banner:list' | 'banner:create' | 'banner:edit' | 'banner:delete'
   | 'announcement:list' | 'announcement:create' | 'announcement:edit' | 'announcement:delete' | 'announcement:publish'
   | 'coupon:list' | 'coupon:create' | 'coupon:edit' | 'coupon:on_off' | 'coupon:delete' | 'coupon:grant' | 'inventory:list' | 'inventory:warning' | 'review:list' | 'review:detail' | 'review:approve' | 'review:block' | 'review:reply' | 'refund:list' | 'refund:detail' | 'refund:approve' | 'refund:reject' | 'refund:refund'
-  | 'export:*' | 'audit:view' | 'setting:edit'
+  | 'export:orders' | 'export:products' | 'export:inventory_logs' | 'audit:view' | 'setting:edit'
 
 
