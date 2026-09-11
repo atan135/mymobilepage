@@ -2,7 +2,7 @@
 
 > `admin/` 目录相关文档。Vue 3 + Vite + TypeScript + Vue Router + Pinia + Element Plus。
 
-## 文档清单（Phase 1）
+## 文档清单（Phase 1 + Phase 2）
 
 | 文件 | 对应页面 | 权限点 |
 | --- | --- | --- |
@@ -13,20 +13,13 @@
 | `05-商品与分类管理.md` | `CategoryListView` + `ProductListView` | `category:*` / `product:*` |
 | `06-订单管理.md` | `OrderListView` | `order:list` / `order:detail` / `order:ship` |
 | `07-内容管理.md` | `BannerListView` + `AnnouncementListView` | `banner:*` / `announcement:*` |
-
-## Phase 2 占位
-
-| 文件 | 状态 |
-| --- | --- |
-| `08-优惠券与促销.md` | [Phase 2 预留] |
-| `09-库存预警.md` | [Phase 2 预留] |
-| `10-评价管理.md` | [Phase 2 预留] |
-| `11-退款与售后.md` | [Phase 2 预留] |
-| `12-数据导出.md` | [Phase 2 预留] |
-| `13-操作日志.md` | [Phase 2 预留] |
-| `14-系统设置.md` | [Phase 2 预留] |
-
-> Phase 2 启动后直接补对应文件内容，目录结构无需调整。
+| `08-优惠券与促销.md` | `CouponListView` + `CouponClaimsView` | `coupon:*` |
+| `09-库存预警.md` | `InventoryWarningListView` + `InventoryLogListView` | `inventory:list` / `inventory:warning` |
+| `10-评价管理.md` | `ReviewListView` + `ReviewDetailView` | `review:list` / `review:detail` |
+| `11-退款与售后.md` | `RefundListView` + `RefundDetailView` | `refund:list` / `refund:detail` |
+| `12-数据导出.md` | （嵌入订单 / 商品 / 库存流水列表 Dialog） | `export:orders` / `export:products` / `export:inventory_logs` |
+| `13-操作日志.md` | `AuditLogListView` | `audit:view` |
+| `14-系统设置.md` | `SettingsView` | `setting:list`（编辑按 group 拆 5 个权限码） |
 
 ## 业务模块文档统一模板
 
