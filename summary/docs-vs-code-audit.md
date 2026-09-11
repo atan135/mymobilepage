@@ -16,9 +16,42 @@
 
 ---
 
+---
+
+## 修复进度（截至本次提交）
+
+**已修复条目**：H1-H17、M1-M14、L1-L11 全部 42 条 + 附录 A 1 条 = **共 43 条**。
+
+剩余：**附录 B** 中提到的"延后项"（如 User.status 字段补 schema、ECharts 销售趋势切换控件等）非紧急，可在后续 Phase 3 跟进。
+
+修复顺序按"强烈推荐先修 10 条"权重从高到低：
+
+| # | 条目 | 提交类型 | 备注 |
+| --- | --- | --- | --- |
+| 1 | H5 系统设置四方权限码 | fix(admin) | router/layout `setting:edit` -> `setting:list` |
+| 2 | H10/H11 AGENTS §7 自点名 | fix(client) | 删除 request.ts mock 注释 + LoginView 演示文案 |
+| 3 | H1/H2/H8/H15 Phase 2 完成态 | docs(server/admin/client) | 补模块/表/视图/页面 |
+| 4 | H3/L5/L9 状态 5 + 字段 | fix(admin) + docs | ORDER_STATUSES 加 5；文档同步 |
+| 5 | H4 ADMIN 权限码 | docs(server/00/10) | seed.ts 作真相源，更新 3 处 |
+| 6 | H12 Vant 版本号 | docs(AGENTS/client) | Vant 5 -> Vant 4 |
+| 7 | H14 `/order/success?orderNo` -> `?id` | docs(client) | 改 02/04/05 三处 |
+| 8 | M10/M11 部署 env + Prisma | docs(deploy) | 补 3 个 env + prisma:deploy 命令 |
+| 9 | H6/M14/M12/L1 中间件/迁移/seed | docs(server) | AuditInterceptor 状态 + 迁移表 + seed 步骤 |
+| 10 | L2 admin-users User.status | fix(server) | 移除 where.status 字段过滤 |
+| + | 附录 A AdminExportsModule 未挂载 | fix(server) | 注册到 app.module.ts imports |
+
+每条修复均按 AGENTS.md"一事一提交"原则拆为独立 commit：
+- 代码 commit：fix(admin/client/server)
+- 文档 commit：docs(server/admin/client/deploy) 或 docs(AGENTS.md)
+- summary commit：docs(summary)
+
+---
+
+
+
 ## 高严重度（High）
 
-### H1. 服务端模块清单严重过时（14 vs 25）
+✅ (已修复) ### H1. 服务端模块清单严重过时（14 vs 25）
 
 **文档位置**：
 - `docs/00-总览与入门/03-架构与目录结构.md` §5「服务端 14 个模块」
@@ -48,7 +81,7 @@
 
 ---
 
-### H2. 数据库表清单严重过时（10 vs 16）
+✅ (已修复) ### H2. 数据库表清单严重过时（10 vs 16）
 
 **文档位置**：
 - `docs/10-服务端/03-数据库Schema说明.md` §1「Phase 1 完成后共 **10 张表**」
@@ -90,7 +123,7 @@
 
 ---
 
-### H3. 订单状态枚举少一个状态（5 vs 6），状态机缺两条边
+✅ (已修复) ### H3. 订单状态枚举少一个状态（5 vs 6），状态机缺两条边
 
 **文档位置**：
 - `docs/10-服务端/03-数据库Schema说明.md` §3 `orders`（只列 0–4）
@@ -131,7 +164,7 @@ export const ORDER_TRANSITIONS = {
 
 ---
 
-### H4. ADMIN 权限码清单 3 处文档严重过时（24 vs 41）
+✅ (已修复) ### H4. ADMIN 权限码清单 3 处文档严重过时（24 vs 41）
 
 **文档位置**：
 - `docs/00-总览与入门/04-开发约定与常见问题.md` §4（24 条）
@@ -170,7 +203,7 @@ export const ORDER_TRANSITIONS = {
 
 ---
 
-### H5. 系统设置四方权限码不一致（真 bug）
+✅ (已修复) ### H5. 系统设置四方权限码不一致（真 bug）
 
 **文档位置**：
 - `docs/20-管理后台/14-系统设置.md` 全文统一用 `setting:edit`
@@ -192,7 +225,7 @@ export const ORDER_TRANSITIONS = {
 
 ---
 
-### H6. 全局 `AuditInterceptor` 已实现但文档说"暂未实现"
+✅ (已修复) ### H6. 全局 `AuditInterceptor` 已实现但文档说"暂未实现"
 
 **文档位置**：`docs/10-服务端/05-通用服务与中间件.md` §8「全局守卫 / 拦截器现状」
 
@@ -209,7 +242,7 @@ export const ORDER_TRANSITIONS = {
 
 ---
 
-### H7. 前台守卫覆盖清单漏 2 个 controller
+✅ (已修复) ### H7. 前台守卫覆盖清单漏 2 个 controller
 
 **文档位置**：`docs/10-服务端/02-模块总览.md` 末段 / `docs/10-服务端/04-认证与权限体系.md` §8
 
@@ -224,7 +257,7 @@ export const ORDER_TRANSITIONS = {
 
 ---
 
-### H8. 移动端页面数 10 vs 13，3 个 Phase 2 页面完全未文档化
+✅ (已修复) ### H8. 移动端页面数 10 vs 13，3 个 Phase 2 页面完全未文档化
 
 **文档位置**：
 - `docs/30-移动端/02-路由与页面结构.md:3`「移动端所有页面（10 个）的清单」
@@ -242,7 +275,7 @@ export const ORDER_TRANSITIONS = {
 
 ---
 
-### H9. 路由 `/coupons`、`/refunds/my`、`/refunds/detail` 在路由表中存在但文档零提及
+✅ (已修复) ### H9. 路由 `/coupons`、`/refunds/my`、`/refunds/detail` 在路由表中存在但文档零提及
 
 **文档位置**：`docs/30-移动端/02-路由与页面结构.md` 路由总览表（只到 `/order/detail`）
 
@@ -255,7 +288,7 @@ export const ORDER_TRANSITIONS = {
 
 ---
 
-### H10. AGENTS.md §7 #8 警告的 mock 注释实际仍在代码
+✅ (已修复) ### H10. AGENTS.md §7 #8 警告的 mock 注释实际仍在代码
 
 **AGENTS.md 说法**（坑位 #8）：
 > `client/src/api/request.ts` 中的「所有接口走本地 mock」注释已过时；当前**所有 api 已切真实调用**。
@@ -274,7 +307,7 @@ export const ORDER_TRANSITIONS = {
 
 ---
 
-### H11. AGENTS.md §7 #9 警告的"演示版"文案实际仍在登录页
+✅ (已修复) ### H11. AGENTS.md §7 #9 警告的"演示版"文案实际仍在登录页
 
 **AGENTS.md 说法**（坑位 #9）：
 > 「演示版：任意非空用户名 / 密码均可登录」已过时，会走真实 bcrypt 校验。
@@ -288,7 +321,7 @@ export const ORDER_TRANSITIONS = {
 
 ---
 
-### H12. 文档全写"Vant 5"，实际装 Vant 4.10.2
+✅ (已修复) ### H12. 文档全写"Vant 5"，实际装 Vant 4.10.2
 
 **文档位置**：
 - `AGENTS.md:11`「Vue 3.5 + Vant 5」
@@ -303,7 +336,7 @@ export const ORDER_TRANSITIONS = {
 
 ---
 
-### H13. 文档称优惠券 / 退款为"Phase 2 占位"，代码已完整实现
+✅ (已修复) ### H13. 文档称优惠券 / 退款为"Phase 2 占位"，代码已完整实现
 
 **文档位置**（4 处）：
 - `docs/30-移动端/02-路由与页面结构.md:78`「菜单列表：我的订单 / **优惠券（Phase 2）** / 收货地址（Phase 2） / 客户服务」
@@ -325,7 +358,7 @@ export const ORDER_TRANSITIONS = {
 
 ---
 
-### H14. `/order/success` query 参数文档写 `orderNo`，实际是 `id`
+✅ (已修复) ### H14. `/order/success` query 参数文档写 `orderNo`，实际是 `id`
 
 **文档位置**（3 处）：
 - `docs/30-移动端/02-路由与页面结构.md:170` 表格「/order/success | orderNo」
@@ -340,7 +373,7 @@ export const ORDER_TRANSITIONS = {
 
 ---
 
-### H15. README 把 08–14 全部标 Phase 2 占位，但均已实现
+✅ (已修复) ### H15. README 把 08–14 全部标 Phase 2 占位，但均已实现
 
 **文档位置**：`docs/20-管理后台/README.md:26-34`「Phase 2 占位」表格
 
@@ -355,7 +388,7 @@ export const ORDER_TRANSITIONS = {
 
 ---
 
-### H16. `PermissionsGuard` 注册方式描述错误
+✅ (已修复) ### H16. `PermissionsGuard` 注册方式描述错误
 
 **文档位置**：`docs/10-服务端/02-模块总览.md` 第 87 行
 
@@ -374,7 +407,7 @@ providers: [AdminAuthService, PermissionsGuard,
 
 ---
 
-### H17. Seed 入口命令文档写 `ts-node`，实际 `tsx`
+✅ (已修复) ### H17. Seed 入口命令文档写 `ts-node`，实际 `tsx`
 
 **文档位置**：
 - `docs/10-服务端/01-技术栈与启动.md:126`
@@ -395,7 +428,7 @@ providers: [AdminAuthService, PermissionsGuard,
 
 ## 中严重度（Medium）
 
-### M1. Dashboard 文档结构与实际代码严重不符
+✅ (已修复) ### M1. Dashboard 文档结构与实际代码严重不符
 
 **文档位置**：`docs/20-管理后台/03-仪表盘.md`
 
@@ -413,7 +446,7 @@ providers: [AdminAuthService, PermissionsGuard,
 
 ---
 
-### M2. 管理后台视图 / 路由 / 菜单清单严重不全
+✅ (已修复) ### M2. 管理后台视图 / 路由 / 菜单清单严重不全
 
 **文档位置**：
 - `docs/20-管理后台/01-技术栈与启动.md` §3 路由结构（列 7 个）、§8 目录 `views/`（列 8 个）、§8 `api/`（列 8 个）
@@ -429,7 +462,7 @@ providers: [AdminAuthService, PermissionsGuard,
 
 ---
 
-### M3. BannerListView 启用控件描述与代码不符
+✅ (已修复) ### M3. BannerListView 启用控件描述与代码不符
 
 **文档位置**：`docs/20-管理后台/07-内容管理.md` §4 轮播图布局
 
@@ -443,7 +476,7 @@ providers: [AdminAuthService, PermissionsGuard,
 
 ---
 
-### M4. 订单 / 商品 / 库存流水导出功能在主文档完全未提及
+✅ (已修复) ### M4. 订单 / 商品 / 库存流水导出功能在主文档完全未提及
 
 **文档位置**：`docs/20-管理后台/06-订单管理.md` / `05-商品与分类管理.md` / `09-库存预警.md`
 
@@ -456,7 +489,7 @@ providers: [AdminAuthService, PermissionsGuard,
 
 ---
 
-### M5. 订单搜索 placeholder 与代码行为不一致
+✅ (已修复) ### M5. 订单搜索 placeholder 与代码行为不一致
 
 **位置**：`admin/src/views/OrderListView.vue:207`、`:456` 导出 Dialog
 
@@ -470,7 +503,7 @@ providers: [AdminAuthService, PermissionsGuard,
 
 ---
 
-### M6. 仪表盘 KPI 卡片可点击交互未文档化
+✅ (已修复) ### M6. 仪表盘 KPI 卡片可点击交互未文档化
 
 **代码事实**：`DashboardView.vue:147-148, 178-185`「待处理订单」与「库存预警」两个 KPI 卡均有 `@click` 跳转；line 226-227、251-252 顶部还有 el-link「查看全部 →」。
 
@@ -478,7 +511,7 @@ providers: [AdminAuthService, PermissionsGuard,
 
 ---
 
-### M7. `CreateOrderPayload` 类型定义漏 `couponId`
+✅ (已修复) ### M7. `CreateOrderPayload` 类型定义漏 `couponId`
 
 **文档位置**：`docs/30-移动端/03-状态管理与接口调用.md:193-197`
 
@@ -497,7 +530,7 @@ export interface CreateOrderPayload {
 
 ---
 
-### M8. OrderDetailView「申请退款」功能完全未文档化
+✅ (已修复) ### M8. OrderDetailView「申请退款」功能完全未文档化
 
 **文档位置**：`docs/30-移动端/05-业务模块说明.md:181-188` 操作分支只写 PENDING 取消 / PAID 取消+提醒发货 / SHIPPED 确认收货。
 
@@ -509,7 +542,7 @@ export interface CreateOrderPayload {
 
 ---
 
-### M9. 下单流程图未含优惠券节点
+✅ (已修复) ### M9. 下单流程图未含优惠券节点
 
 **文档位置**：`docs/30-移动端/04-核心业务流程.md:70-104` 时序图直接从"提交订单 → POST /api/orders"。
 
@@ -522,7 +555,7 @@ export interface CreateOrderPayload {
 
 ---
 
-### M10. 部署文档环境变量清单不全
+✅ (已修复) ### M10. 部署文档环境变量清单不全
 
 **文档位置**：`docs/40-部署与运维/01-环境准备.md:44-58`
 
@@ -548,7 +581,7 @@ CORS_ORIGINS="http://localhost:5173,http://localhost:5174"   ← 缺
 
 ---
 
-### M11. 上线清单的 Prisma 迁移命令实际不存在
+✅ (已修复) ### M11. 上线清单的 Prisma 迁移命令实际不存在
 
 **文档位置**：`docs/40-部署与运维/04-上线检查清单.md:17`
 
@@ -567,7 +600,7 @@ CORS_ORIGINS="http://localhost:5173,http://localhost:5174"   ← 缺
 
 ---
 
-### M12. 退款 UI 状态已实现，文档仍标「Phase 2 UI」
+✅ (已修复) ### M12. 退款 UI 状态已实现，文档仍标「Phase 2 UI」
 
 **文档位置**：`docs/10-服务端/03-数据库Schema说明.md` §3「refund_requests」字段说明
 
@@ -583,7 +616,7 @@ CORS_ORIGINS="http://localhost:5173,http://localhost:5174"   ← 缺
 
 ---
 
-### M13. ADMIN 角色"故意不包含"清单需要重写
+✅ (已修复) ### M13. ADMIN 角色"故意不包含"清单需要重写
 
 **文档位置**：`docs/10-服务端/06-数据迁移与Seed脚本.md` §4 末尾
 
@@ -601,7 +634,7 @@ CORS_ORIGINS="http://localhost:5173,http://localhost:5174"   ← 缺
 
 ---
 
-### M14. Phase 2 迁移历史完全缺失
+✅ (已修复) ### M14. Phase 2 迁移历史完全缺失
 
 **文档位置**：`docs/10-服务端/06-数据迁移与Seed脚本.md` §2「迁移历史」
 
@@ -626,7 +659,7 @@ CORS_ORIGINS="http://localhost:5173,http://localhost:5174"   ← 缺
 
 ## 低严重度（Low）
 
-### L1. Seed 写入步骤遗漏 3 步
+✅ (已修复) ### L1. Seed 写入步骤遗漏 3 步
 
 **文档位置**：`docs/10-服务端/06-数据迁移与Seed脚本.md` §3（列 8 步）
 
@@ -639,7 +672,7 @@ CORS_ORIGINS="http://localhost:5173,http://localhost:5174"   ← 缺
 
 ---
 
-### L2. `User` 模块 service 引用 schema 不存在的字段（真 bug）
+✅ (已修复) ### L2. `User` 模块 service 引用 schema 不存在的字段（真 bug）
 
 **位置**：`server/src/admin-users/admin-users.service.ts:18` `where.status = q.status`
 
@@ -651,7 +684,7 @@ CORS_ORIGINS="http://localhost:5173,http://localhost:5174"   ← 缺
 
 ---
 
-### L3. 主题色覆盖描述不准确
+✅ (已修复) ### L3. 主题色覆盖描述不准确
 
 **AGENTS.md §7 #7 说法**：
 > `admin/src/styles/main.css` 已在 `:root` + `:root[data-theme="dark"]` 完成 Element Plus 变量覆盖，**不要**再说"未做"。
@@ -665,7 +698,7 @@ CORS_ORIGINS="http://localhost:5173,http://localhost:5174"   ← 缺
 
 ---
 
-### L4. `Product.threshold` 字段未在 schema 文档提及
+✅ (已修复) ### L4. `Product.threshold` 字段未在 schema 文档提及
 
 **文档位置**：`docs/10-服务端/03-数据库Schema说明.md` §3「products」字段说明
 
@@ -675,7 +708,7 @@ CORS_ORIGINS="http://localhost:5173,http://localhost:5174"   ← 缺
 
 ---
 
-### L5. `Order` 表缺 3 个 Phase 2 字段说明
+✅ (已修复) ### L5. `Order` 表缺 3 个 Phase 2 字段说明
 
 **文档位置**：`docs/10-服务端/03-数据库Schema说明.md` §3「orders」字段说明
 
@@ -685,7 +718,7 @@ CORS_ORIGINS="http://localhost:5173,http://localhost:5174"   ← 缺
 
 ---
 
-### L6. `setQuantity` 上限 99 未文档化
+✅ (已修复) ### L6. `setQuantity` 上限 99 未文档化
 
 **文档位置**：`docs/30-移动端/03-状态管理与接口调用.md:150-153`
 
@@ -695,7 +728,7 @@ CORS_ORIGINS="http://localhost:5173,http://localhost:5174"   ← 缺
 
 ---
 
-### L7. mock 目录描述微误
+✅ (已修复) ### L7. mock 目录描述微误
 
 **文档位置**：`docs/30-移动端/03-状态管理与接口调用.md:235`
 
@@ -707,7 +740,7 @@ CORS_ORIGINS="http://localhost:5173,http://localhost:5174"   ← 缺
 
 ---
 
-### L8. HomeView 客服电话 + 站点名（公开设置）功能未文档化
+✅ (已修复) ### L8. HomeView 客服电话 + 站点名（公开设置）功能未文档化
 
 **代码事实**（`client/src/views/HomeView.vue:13-32`）：调 `listPublicSettings(['site_name', 'customer_service_phone'])`，影响 nav-bar title + 底部客服电话卡片。
 
@@ -718,7 +751,7 @@ CORS_ORIGINS="http://localhost:5173,http://localhost:5174"   ← 缺
 
 ---
 
-### L9. `refund_requests.status` 状态机未文档化
+✅ (已修复) ### L9. `refund_requests.status` 状态机未文档化
 
 **文档位置**：`docs/10-服务端/03-数据库Schema说明.md` §3「refund_requests」字段说明
 
@@ -739,7 +772,7 @@ export const REFUND_TRANSITIONS: Record<RefundStatus, RefundStatus[]> = {
 
 ---
 
-### L10. ProfileView 菜单漏「我的退款」项
+✅ (已修复) ### L10. ProfileView 菜单漏「我的退款」项
 
 **文档位置**：
 - `docs/30-移动端/02-路由与页面结构.md:78`
@@ -751,7 +784,7 @@ export const REFUND_TRANSITIONS: Record<RefundStatus, RefundStatus[]> = {
 
 ---
 
-### L11. Phase 1 / 2 完成态描述不一致
+✅ (已修复) ### L11. Phase 1 / 2 完成态描述不一致
 
 **文档位置**：
 - `AGENTS.md` 项目背景
