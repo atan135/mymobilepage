@@ -32,3 +32,14 @@ client/vite.config.d.ts
 client/vite.config.js
 client/vite.config.*.js
 client/vite.config.*.d.ts
+
+# NestJS / Prisma
+server/dist/
+server/.env
+server/.env.*.local
+server/coverage/
+server/*.tsbuildinfo
+server/node_modules/
+# Prisma generated artifacts (client lives under node_modules so OK to ignore)
+server/prisma/*.db
+server/prisma/*.db-journal
