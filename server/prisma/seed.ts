@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import * as bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
@@ -13,10 +14,31 @@ const categories = [
 
 const cover = (seed: string) => `https://picsum.photos/seed/${seed}/400/400`
 
+const SUPER_ADMIN_PERMISSIONS = ['*']
+
+const ADMIN_PERMISSIONS = [
+  'dashboard:view',
+  'user:list', 'user:detail',
+  'product:list', 'product:create', 'product:edit',
+  'product:on_off', 'product:adjust_stock',
+  'category:list', 'category:create', 'category:edit',
+  'order:list', 'order:detail', 'order:ship',
+  'banner:list', 'banner:create', 'banner:edit',
+  'announcement:list', 'announcement:create', 'announcement:edit'
+]
+
 async function main(): Promise<void> {
-  console.log('Cleaning existing data...')
+  console.log('Cleaning transactional data (categories / products / banners / announcements / orders)...')
+  await prisma.refundRequest.deleteMany()
+  await prisma.orderItem.deleteMany()
+  await prisma.order.deleteMany()
+  await prisma.announcement.deleteMany()
+  await prisma.banner.deleteMany()
   await prisma.product.deleteMany()
   await prisma.category.deleteMany()
+  console.log('Cleaning admin users / roles...')
+  await prisma.adminUser.deleteMany()
+  await prisma.role.deleteMany()
 
   console.log('Seeding categories...')
   const created = await Promise.all(
@@ -52,12 +74,54 @@ async function main(): Promise<void> {
     ]
   })
 
+  console.log('Seeding admin roles...')
+  const superRole = await prisma.role.create({
+    data: {
+      name: '超级管理员',
+      code: 'SUPER_ADMIN',
+      description: '拥有所有权限',
+      permissions: SUPER_ADMIN_PERMISSIONS
+    }
+  })
+  const adminRole = await prisma.role.create({
+    data: {
+      name: '普通管理员',
+      code: 'ADMIN',
+      description: '日常运营权限（不含删除 / 角色分配等敏感操作）',
+      permissions: ADMIN_PERMISSIONS
+    }
+  })
+
+  console.log('Seeding admin users...')
+  const superPwd = await bcrypt.hash('admin123', 10)
+  await prisma.adminUser.create({
+    data: {
+      username: 'admin',
+      passwordHash: superPwd,
+      nickname: '超级管理员',
+      roleId: superRole.id
+    }
+  })
+  const adminPwd = await bcrypt.hash('admin123', 10)
+  await prisma.adminUser.create({
+    data: {
+      username: 'operator',
+      passwordHash: adminPwd,
+      nickname: '运营',
+      roleId: adminRole.id
+    }
+  })
+
   const counts = {
     categories: await prisma.category.count(),
     products: await prisma.product.count(),
-    banners: await prisma.banner.count()
+    banners: await prisma.banner.count(),
+    roles: await prisma.role.count(),
+    adminUsers: await prisma.adminUser.count()
   }
   console.log('Seed complete:', counts)
+  console.log('Admin login: username=admin / password=admin123  (SUPER_ADMIN)')
+  console.log('Admin login: username=operator / password=admin123  (ADMIN)')
 }
 
 main()
