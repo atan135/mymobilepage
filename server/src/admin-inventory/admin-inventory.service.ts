@@ -55,25 +55,28 @@ export class AdminInventoryService {
   /**
    * 预警商品列表：stock <= threshold AND status = 1（上架）。
    * 默认按 (threshold - stock) desc 排序，最缺货的排前。
+   *
+   * 注意：库存阈值比较用 Prisma fieldRef 下推到 SQL，不再内存过滤，
+   * 避免商品数量增大后全表扫描 + Node 层 OOM。
    */
   async warnings() {
     const rows = await this.prisma.product.findMany({
-      where: { status: 1 },
-      orderBy: [{ id: 'desc' }]
+      where: {
+        status: 1,
+        stock: { lte: this.prisma.product.fields.threshold }
+      },
+      orderBy: [{ stock: 'asc' }, { id: 'desc' }]
     })
-    return rows
-      .filter((p) => p.stock <= p.threshold)
-      .map((p) => ({
-        id: p.id,
-        title: p.title,
-        cover: p.cover,
-        stock: p.stock,
-        threshold: p.threshold,
-        gap: p.threshold - p.stock,
-        status: p.status,
-        categoryId: p.categoryId
-      }))
-      .sort((a, b) => b.gap - a.gap)
+    return rows.map((p) => ({
+      id: p.id,
+      title: p.title,
+      cover: p.cover,
+      stock: p.stock,
+      threshold: p.threshold,
+      gap: p.threshold - p.stock,
+      status: p.status,
+      categoryId: p.categoryId
+    }))
   }
 
   /**
@@ -92,12 +95,14 @@ export class AdminInventoryService {
 
   /**
    * 预警汇总数（Dashboard 用）。
+   * 通过 Prisma fieldRef 下推到 SQL，避免内存过滤。
    */
   async warningCount(): Promise<number> {
-    const rows = await this.prisma.product.findMany({
-      where: { status: 1 },
-      select: { stock: true, threshold: true }
+    return this.prisma.product.count({
+      where: {
+        status: 1,
+        stock: { lte: this.prisma.product.fields.threshold }
+      }
     })
-    return rows.filter((p) => p.stock <= p.threshold).length
   }
 }
