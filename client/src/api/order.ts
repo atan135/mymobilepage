@@ -66,10 +66,19 @@ export interface OrderListItem {
   updatedAt: string
 }
 
+
+export interface OrderRefundBrief {
+  id: number
+  status: number
+  amount: number
+  reason: string
+}
+
 export interface OrderDetail extends Omit<OrderListItem, 'itemCount'> {
   items: OrderItem[]
   receiver: OrderReceiver
   coupon: OrderCouponInfo | null
+  refund: OrderRefundBrief | null
 }
 
 export interface PaginatedOrders {

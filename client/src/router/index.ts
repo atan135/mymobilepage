@@ -78,6 +78,18 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '领券中心', requiresAuth: true }
   },
   {
+    path: '/refunds/my',
+    name: 'refund-list',
+    component: () => import('../views/RefundListView.vue'),
+    meta: { title: '我的退款', requiresAuth: true }
+  },
+  {
+    path: '/refunds/detail',
+    name: 'refund-detail',
+    component: () => import('../views/RefundDetailView.vue'),
+    meta: { title: '退款详情', requiresAuth: true }
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/home'
   }

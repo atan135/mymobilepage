@@ -162,7 +162,8 @@ export class ClientOrdersService {
       where: { id },
       include: {
         items: true,
-        coupons: { include: { coupon: true } }
+        coupons: { include: { coupon: true } },
+        refund: true
       }
     })
     if (!o) throw new NotFoundException('订单不存在')
@@ -179,7 +180,8 @@ export class ClientOrdersService {
       where: { id },
       include: {
         items: true,
-        coupons: true
+        coupons: true,
+        refund: true
       }
     })
     if (!order || order.userId !== userId) {
@@ -228,7 +230,7 @@ export class ClientOrdersService {
   async confirmReceipt(userId: number, id: number) {
     const order = await this.prisma.order.findUnique({
       where: { id },
-      include: { items: true, coupons: { include: { coupon: true } } }
+      include: { items: true, coupons: { include: { coupon: true } }, refund: true }
     })
     if (!order || order.userId !== userId) {
       throw new NotFoundException('订单不存在')
@@ -239,7 +241,7 @@ export class ClientOrdersService {
     const updated = await this.prisma.order.update({
       where: { id },
       data: { status: 3, completedAt: new Date() },
-      include: { items: true, coupons: { include: { coupon: true } } }
+      include: { items: true, coupons: { include: { coupon: true } }, refund: true }
     })
     return this.formatOrder(updated)
   }

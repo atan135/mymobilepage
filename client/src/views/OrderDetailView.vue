@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { showToast, showConfirmDialog } from 'vant'
+import { showToast, showConfirmDialog, showDialog } from 'vant'
 import {
   getOrder,
   cancelOrder,
   confirmReceipt,
   type OrderDetail
 } from '../api/order'
+import { createRefund } from '../api/refund'
 
 const route = useRoute()
 const router = useRouter()
@@ -29,6 +30,13 @@ const STATUS_TAG_TYPE: Record<number, 'primary' | 'success' | 'default' | 'warni
   2: 'success',
   3: 'default',
   4: 'default'
+}
+
+const REFUND_STATUS_LABELS: Record<number, string> = {
+  0: '退款待审',
+  1: '退款已批准',
+  2: '退款已拒绝',
+  3: '退款已完成'
 }
 
 async function load() {
@@ -53,7 +61,7 @@ async function onCancel() {
   try {
     await showConfirmDialog({
       title: '确认取消订单',
-      message: '取消后将自动退款（演示版不实际退款）'
+      message: '取消后无法恢复，已使用的优惠券将退回'
     })
   } catch {
     return
@@ -72,7 +80,7 @@ async function onConfirmReceipt() {
   try {
     await showConfirmDialog({
       title: '确认收货',
-      message: '请确认已收到货物后再确认后'
+      message: '请确认已收到货物'
     })
   } catch {
     return
@@ -84,6 +92,59 @@ async function onConfirmReceipt() {
   } finally {
     acting.value = false
   }
+}
+
+// 申请退款 Dialog
+const refundVisible = ref(false)
+const refundForm = reactive({
+  amount: 0,
+  reason: ''
+})
+
+const canRefund = computed(() => {
+  if (!order.value) return false
+  if (order.value.refund) return false
+  return order.value.status === 2 || order.value.status === 3
+})
+
+function openRefund() {
+  if (!order.value) return
+  refundForm.amount = Number(order.value.totalAmount)
+  refundForm.reason = ''
+  refundVisible.value = true
+}
+
+async function submitRefund() {
+  if (!order.value) return
+  if (!refundForm.reason.trim()) {
+    showToast('请填写退款原因')
+    return
+  }
+  if (refundForm.amount <= 0 || refundForm.amount > Number(order.value.totalAmount)) {
+    showToast(`退款金额需在 0 ~ ¥${order.value.totalAmount} 之间`)
+    return
+  }
+  acting.value = true
+  try {
+    await createRefund({
+      orderId: order.value.id,
+      reason: refundForm.reason.trim(),
+      amount: Number(refundForm.amount.toFixed(2))
+    })
+    showToast('已提交退款申请')
+    refundVisible.value = false
+    await load()
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : '提交失败'
+    showToast(msg)
+  } finally {
+    acting.value = false
+  }
+}
+
+function goRefundDetail() {
+  if (!order.value?.refund) return
+  router.push({ name: 'refund-detail', query: { id: order.value.refund.id } })
 }
 </script>
 
@@ -127,6 +188,11 @@ async function onConfirmReceipt() {
         <van-cell-group inset title="支付 / 物流" class="block">
           <van-cell title="订单总额" :value="`¥${Number(order.totalAmount).toFixed(2)}`" />
           <van-cell
+            v-if="order.coupon"
+            title="优惠券"
+            :value="`-¥${order.coupon.amount.toFixed(2)}（${order.coupon.name}）`"
+          />
+          <van-cell
             v-if="order.paidAt"
             title="付款时间"
             :value="new Date(order.paidAt).toLocaleString()"
@@ -157,7 +223,27 @@ async function onConfirmReceipt() {
           <van-cell :value="order.remark" />
         </van-cell-group>
 
+        <van-cell-group v-if="order.refund" inset title="退款信息" class="block">
+          <van-cell
+            title="退款状态"
+            :value="REFUND_STATUS_LABELS[order.refund.status] ?? '-'"
+            is-link
+            @click="goRefundDetail"
+          />
+          <van-cell title="退款金额" :value="`¥${Number(order.refund.amount).toFixed(2)}`" />
+          <van-cell title="退款原因" :value="order.refund.reason" />
+        </van-cell-group>
+
         <div class="actions">
+          <van-button
+            v-if="canRefund"
+            plain
+            type="warning"
+            :loading="acting"
+            @click="openRefund"
+          >
+            申请退款
+          </van-button>
           <van-button
             v-if="order.status === 0 || order.status === 1"
             plain
@@ -178,6 +264,38 @@ async function onConfirmReceipt() {
         </div>
       </template>
     </div>
+
+    <van-dialog
+      v-model:show="refundVisible"
+      title="申请退款"
+      show-cancel-button
+      :before-close="async (action: string) => {
+        if (action === 'confirm') {
+          await submitRefund()
+          return false
+        }
+        return true
+      }"
+    >
+      <div class="refund-form">
+        <van-field
+          v-model="refundForm.amount"
+          type="number"
+          label="退款金额"
+          placeholder="0.00"
+        />
+        <van-field
+          v-model="refundForm.reason"
+          label="退款原因"
+          type="textarea"
+          rows="3"
+          maxlength="500"
+          show-word-limit
+          placeholder="请描述退款原因"
+        />
+        <p class="refund-tip">订单实付 ¥{{ Number(order?.totalAmount ?? 0).toFixed(2) }}</p>
+      </div>
+    </van-dialog>
   </div>
 </template>
 
@@ -191,5 +309,12 @@ async function onConfirmReceipt() {
   justify-content: flex-end;
   gap: 8px;
   padding: 16px;
+}
+.refund-form { padding: 12px 0; }
+.refund-tip {
+  font-size: 12px;
+  color: #969799;
+  padding: 0 16px 8px;
+  margin: 0;
 }
 </style>
