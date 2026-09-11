@@ -13,6 +13,7 @@ import { AdminBannersModule } from './admin-banners/admin-banners.module'
 import { AdminAnnouncementsModule } from './admin-announcements/admin-announcements.module'
 import { AdminOrdersModule } from './admin-orders/admin-orders.module'
 import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module'
+import { AdminExportsModule } from './admin-exports/admin-exports.module'
 import { AdminCouponsModule } from './admin-coupons/admin-coupons.module'
 import { AdminRefundsModule } from './admin-refunds/admin-refunds.module'
 import { AdminReviewsModule } from './admin-reviews/admin-reviews.module'
@@ -43,6 +44,7 @@ import { RefundsModule } from './refunds/refunds.module'
     AdminAnnouncementsModule,
     AdminOrdersModule,
     AdminDashboardModule,
+    AdminExportsModule,
     AdminCouponsModule,
     AdminRefundsModule,
     AdminReviewsModule,
@@ -59,3 +61,4 @@ import { RefundsModule } from './refunds/refunds.module'
   ]
 })
 export class AppModule {}
+
