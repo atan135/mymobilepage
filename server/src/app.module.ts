@@ -13,6 +13,8 @@ import { AdminBannersModule } from './admin-banners/admin-banners.module'
 import { AdminAnnouncementsModule } from './admin-announcements/admin-announcements.module'
 import { AdminOrdersModule } from './admin-orders/admin-orders.module'
 import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module'
+import { ClientBannersModule } from './client-banners/client-banners.module'
+import { ClientOrdersModule } from './client-orders/client-orders.module'
 
 @Module({
   imports: [
@@ -29,7 +31,9 @@ import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module'
     AdminBannersModule,
     AdminAnnouncementsModule,
     AdminOrdersModule,
-    AdminDashboardModule
+    AdminDashboardModule,
+    ClientBannersModule,
+    ClientOrdersModule
   ]
 })
 export class AppModule {}
