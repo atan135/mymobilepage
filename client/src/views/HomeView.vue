@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { listBanners, type Banner } from '../api/banner'
+import { listPublicSettings } from '../api/settings'
 import {
   listCategories,
   listProducts,
@@ -13,6 +14,8 @@ const router = useRouter()
 
 const banners = ref<Banner[]>([])
 const categories = ref<Category[]>([])
+const siteName = ref('我的商城')
+const customerServicePhone = ref('')
 const products = ref<Product[]>([])
 const refreshing = ref(false)
 const listLoading = ref(false)
@@ -21,6 +24,21 @@ const page = ref(1)
 
 async function loadBanners() {
   banners.value = await listBanners()
+}
+
+async function loadSettings() {
+  try {
+    const r = await listPublicSettings(['site_name', 'customer_service_phone'])
+    const items = r.items
+    if (typeof items.site_name === 'string' && items.site_name.length > 0) {
+      siteName.value = items.site_name
+    }
+    if (typeof items.customer_service_phone === 'string') {
+      customerServicePhone.value = items.customer_service_phone
+    }
+  } catch {
+    // 静默失败，使用默认值
+  }
 }
 
 async function loadCategories() {
@@ -44,7 +62,7 @@ async function onRefresh() {
 }
 
 async function init() {
-  await Promise.all([loadBanners(), loadCategories()])
+  await Promise.all([loadBanners(), loadCategories(), loadSettings()])
   await loadProducts()
 }
 
@@ -53,7 +71,7 @@ onMounted(init)
 
 <template>
   <div class="home">
-    <van-nav-bar title="我的商城" fixed />
+    <van-nav-bar :title="siteName" fixed />
 
     <van-swipe :autoplay="4000" indicator-color="white" class="banner">
       <van-swipe-item v-for="b in banners" :key="b.id">
@@ -89,6 +107,11 @@ onMounted(init)
         />
       </van-list>
     </van-pull-refresh>
+
+    <div v-if="customerServicePhone" class="cs-card">
+      <van-icon name="service" />
+      <span>客服电话：{{ customerServicePhone }}</span>
+    </div>
   </div>
 </template>
 
@@ -107,5 +130,21 @@ onMounted(init)
 .cats {
   background: #fff;
   margin-bottom: 8px;
+}
+.cs-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  margin: 16px;
+  background: #fff;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #666;
+}
+.cs-card .van-icon {
+  color: #1989fa;
+  font-size: 18px;
 }
 </style>
