@@ -72,6 +72,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '订单详情', requiresAuth: true }
   },
   {
+    path: '/coupons',
+    name: 'coupons',
+    component: () => import('../views/CouponCenterView.vue'),
+    meta: { title: '领券中心', requiresAuth: true }
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/home'
   }

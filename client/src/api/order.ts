@@ -15,6 +15,11 @@ export interface CreateOrderPayload {
   items: CartItemPayload[]
   receiver: ReceiverPayload
   remark?: string
+  /**
+   * 可选：使用的 UserCoupon.id（不是 coupons.id）。
+   * 服务端会校验归属 + 未使用 + 未过期，并按 coupon.type 计算折扣。
+   */
+  couponId?: number
 }
 
 export interface OrderItem {
@@ -32,11 +37,21 @@ export interface OrderReceiver {
   address: string
 }
 
+export interface OrderCouponInfo {
+  userCouponId: number
+  couponId: number
+  name: string
+  type: number
+  amount: number
+}
+
 export interface OrderListItem {
   id: number
   orderNo: string
   userId: number
   totalAmount: number
+  originalAmount: number | null
+  discountAmount: number | null
   status: number
   itemCount: number
   receiver: unknown
@@ -54,6 +69,7 @@ export interface OrderListItem {
 export interface OrderDetail extends Omit<OrderListItem, 'itemCount'> {
   items: OrderItem[]
   receiver: OrderReceiver
+  coupon: OrderCouponInfo | null
 }
 
 export interface PaginatedOrders {

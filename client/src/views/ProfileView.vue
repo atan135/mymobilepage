@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { showConfirmDialog, showToast } from 'vant'
 import { useUserStore } from '../stores/user'
+import { listMyCoupons } from '../api/coupon'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -14,6 +15,23 @@ const avatar = computed(
   () => userStore.user?.avatar ?? 'https://picsum.photos/seed/default/200/200'
 )
 
+const unusedCouponCount = ref(0)
+
+async function loadCouponCount() {
+  if (!userStore.isLoggedIn) {
+    unusedCouponCount.value = 0
+    return
+  }
+  try {
+    const r = await listMyCoupons({ status: 0, page: 1, pageSize: 1 })
+    unusedCouponCount.value = r.total
+  } catch {
+    unusedCouponCount.value = 0
+  }
+}
+
+onMounted(loadCouponCount)
+
 interface MenuRow {
   icon: string
   label: string
@@ -24,7 +42,7 @@ interface MenuRow {
 
 const menus: MenuRow[] = [
   { icon: 'orders-o', label: '我的订单', desc: '查看全部订单', to: '/order/list' },
-  { icon: 'balance-o', label: '优惠券', desc: '0 张可用（Phase 2 待开发）' },
+  { icon: 'balance-o', label: '优惠券', desc: `${unusedCouponCount.value} 张可用`, to: '/coupons' },
   { icon: 'location-o', label: '收货地址', desc: '管理收货地址（Phase 2 待开发）' },
   { icon: 'service-o', label: '客户服务', desc: '联系客服 / 反馈' }
 ]

@@ -1,13 +1,18 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { showToast } from 'vant'
+import { showActionSheet, showToast } from 'vant'
 import {
   getProduct,
   type Product
 } from '../api/product'
 import { createOrder } from '../api/order'
 import { useCartStore } from '../stores/cart'
+import {
+  listMyCoupons,
+  previewCoupon,
+  type UserCoupon
+} from '../api/coupon'
 
 const route = useRoute()
 const router = useRouter()
@@ -58,8 +63,101 @@ const lines = computed(() => {
   })
 })
 
+const originalAmount = computed(() =>
+  Number(
+    lines.value
+      .reduce((s, l) => s + l.product.price * l.quantity, 0)
+      .toFixed(2)
+  )
+)
+
+// 优惠券：可选一张「未使用」的
+const selectedCouponId = ref<number | null>(null)
+const selectedCouponName = ref('')
+const discountAmount = ref(0)
+const availableCoupons = ref<UserCoupon[]>([])
+const couponLoading = ref(false)
+let previewSeq = 0
+
+async function loadAvailableCoupons() {
+  couponLoading.value = true
+  try {
+    const r = await listMyCoupons({ status: 0, page: 1, pageSize: 50 })
+    availableCoupons.value = r.list
+  } catch {
+    availableCoupons.value = []
+  } finally {
+    couponLoading.value = false
+  }
+}
+
+async function refreshPreview() {
+  const seq = ++previewSeq
+  if (selectedCouponId.value === null) {
+    discountAmount.value = 0
+    return
+  }
+  try {
+    const r = await previewCoupon({
+      items: lines.value.map((l) => ({
+        productId: l.product.id,
+        quantity: l.quantity
+      })),
+      couponId: selectedCouponId.value
+    })
+    if (seq !== previewSeq) return
+    discountAmount.value = Number(r.discountAmount)
+  } catch (e: unknown) {
+    if (seq !== previewSeq) return
+    const msg = e instanceof Error ? e.message : '优惠券不可用'
+    showToast(msg)
+    selectedCouponId.value = null
+    selectedCouponName.value = ''
+    discountAmount.value = 0
+  }
+}
+
+watch(originalAmount, refreshPreview)
+watch(selectedCouponId, refreshPreview)
+
+async function onPickCoupon() {
+  if (availableCoupons.value.length === 0) await loadAvailableCoupons()
+  const actions = [
+    ...availableCoupons.value.map((uc) => ({
+      name: `${uc.coupon.name}（${formatCouponLabel(uc)}）`,
+      subname: uc.expiresAt ? `至 ${new Date(uc.expiresAt).toLocaleDateString()} 过期` : ''
+    })),
+    { name: '不使用优惠券' }
+  ]
+  try {
+    const idx = await showActionSheet({
+      title: '选择优惠券',
+      actions,
+      cancelText: '取消'
+    })
+    if (typeof idx !== 'number') return
+    if (idx === availableCoupons.value.length) {
+      selectedCouponId.value = null
+      selectedCouponName.value = ''
+    } else {
+      const uc = availableCoupons.value[idx]
+      selectedCouponId.value = uc.id
+      selectedCouponName.value = uc.coupon.name
+    }
+  } catch {
+    /* cancelled */
+  }
+}
+
+function formatCouponLabel(uc: UserCoupon): string {
+  const c = uc.coupon
+  if (c.type === 1) return `满${c.threshold ?? 0}减${c.amount}`
+  if (c.type === 2) return `${c.amount}% 折扣`
+  return `¥${c.amount} 代金`
+}
+
 const totalPrice = computed(() =>
-  lines.value.reduce((s, l) => s + l.product.price * l.quantity, 0).toFixed(2)
+  Math.max(0, originalAmount.value - discountAmount.value).toFixed(2)
 )
 
 async function onSubmit() {
@@ -79,7 +177,8 @@ async function onSubmit() {
         phone: receiver.phone.trim(),
         address: receiver.address.trim()
       },
-      remark: remark.value.trim() || undefined
+      remark: remark.value.trim() || undefined,
+      couponId: selectedCouponId.value ?? undefined
     })
     if (!directProductId) cart.clearSelected()
     showToast({ type: 'success', message: '下单成功' })
@@ -91,6 +190,8 @@ async function onSubmit() {
     submitting.value = false
   }
 }
+
+onMounted(loadAvailableCoupons)
 </script>
 
 <template>
@@ -132,6 +233,19 @@ async function onSubmit() {
         </van-card>
       </van-cell-group>
 
+      <van-cell-group inset title="优惠券" class="block">
+        <van-cell
+          :title="selectedCouponId === null ? '不使用优惠券' : selectedCouponName"
+          :label="
+            selectedCouponId === null
+              ? (couponLoading ? '加载中...' : `${availableCoupons.length} 张可用`)
+              : `已优惠 ¥${discountAmount.toFixed(2)}`
+          "
+          is-link
+          @click="onPickCoupon"
+        />
+      </van-cell-group>
+
       <van-cell-group inset title="买家留言" class="block">
         <van-field
           v-model="remark"
@@ -141,6 +255,16 @@ async function onSubmit() {
           maxlength="200"
           show-word-limit
           placeholder="选填，建议留言前先与卖家协商一致"
+        />
+      </van-cell-group>
+
+      <van-cell-group inset title="费用明细" class="block">
+        <van-cell title="商品总额" :value="`¥${originalAmount.toFixed(2)}`" />
+        <van-cell
+          v-if="discountAmount > 0"
+          title="优惠券"
+          :value="`-¥${discountAmount.toFixed(2)}`"
+          value-class="discount-value"
         />
       </van-cell-group>
     </div>
@@ -166,5 +290,8 @@ async function onSubmit() {
   height: 80px;
   border-radius: 6px;
   object-fit: cover;
+}
+:deep(.discount-value) {
+  color: #ee0a24 !important;
 }
 </style>
