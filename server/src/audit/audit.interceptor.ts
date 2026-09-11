@@ -15,6 +15,13 @@ const WRITE_METHODS = new Set(['POST', 'PATCH', 'PUT', 'DELETE'])
 
 /**
  * payload 敏感字段黑名单：写日志前过滤掉这些 key 及其值。
+ *
+ * 覆盖三类敏感数据：
+ * 1) 凭证：password / token
+ * 2) PII：phone / address / email / idCard / realName / bankCard / bankAccount
+ * 3) 后台内部：passwordHash / newPassword / oldPassword / accessToken / refreshToken / secret
+ *
+ * 注意：仅为脱敏；真正生产环境还应配合字段级加密 + 审计日志访问控制。
  */
 const SENSITIVE_KEYS = new Set([
   'password',
@@ -23,7 +30,18 @@ const SENSITIVE_KEYS = new Set([
   'oldPassword',
   'token',
   'accessToken',
-  'refreshToken'
+  'refreshToken',
+  'secret',
+  'phone',
+  'mobile',
+  'email',
+  'address',
+  'receiver',
+  'idCard',
+  'idCardNo',
+  'realName',
+  'bankCard',
+  'bankAccount'
 ])
 
 function sanitize(value: unknown): unknown {
