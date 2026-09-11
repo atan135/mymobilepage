@@ -98,36 +98,54 @@ export class CouponsService {
   }
 
   async claim(userId: number, couponId: number) {
-    const coupon = await this.prisma.coupon.findUnique({ where: { id: couponId } })
-    if (!coupon) throw new NotFoundException('优惠券不存在')
-    if (coupon.status !== 1) throw new BadRequestException('该优惠券已停用')
+    /**
+     * 并发安全领取：
+     * - 整个流程包在 $transaction 中；
+     * - 第一步用 SELECT ... FOR UPDATE 锁住 coupon 行，使同一 coupon 的并发
+     *   claim 串行化；
+     * - 在事务内重新校验 perUserLimit / totalClaimed，避免 count-then-create
+     *   竞态导致的超发。
+     */
+    const userCoupon = await this.prisma.$transaction(async (tx) => {
+      const lockRows = await tx.$queryRaw<Array<{ id: number }>>(
+        Prisma.sql`SELECT id FROM "Coupon" WHERE id = ${couponId} FOR UPDATE`
+      )
+      if (lockRows.length === 0) {
+        throw new NotFoundException('优惠券不存在')
+      }
 
-    const now = new Date()
-    if (coupon.validFrom > now) throw new BadRequestException('该优惠券尚未开始发放')
-    if (coupon.validTo < now) throw new BadRequestException('该优惠券已过期')
+      const coupon = await tx.coupon.findUnique({ where: { id: couponId } })
+      if (!coupon) throw new NotFoundException('优惠券不存在')
+      if (coupon.status !== 1) throw new BadRequestException('该优惠券已停用')
 
-    const userClaimed = await this.prisma.userCoupon.count({
-      where: { userId, couponId }
+      const now = new Date()
+      if (coupon.validFrom > now) throw new BadRequestException('该优惠券尚未开始发放')
+      if (coupon.validTo < now) throw new BadRequestException('该优惠券已过期')
+
+      const userClaimed = await tx.userCoupon.count({
+        where: { userId, couponId }
+      })
+      if (userClaimed >= coupon.perUserLimit) {
+        throw new BadRequestException(`每人限领 ${coupon.perUserLimit} 张`)
+      }
+
+      const totalClaimed = await tx.userCoupon.count({ where: { couponId } })
+      if (totalClaimed >= coupon.total) {
+        throw new BadRequestException('该优惠券已被领完')
+      }
+
+      return tx.userCoupon.create({
+        data: {
+          userId,
+          couponId,
+          status: 0,
+          source: 0,
+          expiresAt: coupon.validTo
+        },
+        include: { coupon: true }
+      })
     })
-    if (userClaimed >= coupon.perUserLimit) {
-      throw new BadRequestException(`每人限领 ${coupon.perUserLimit} 张`)
-    }
 
-    const totalClaimed = await this.prisma.userCoupon.count({ where: { couponId } })
-    if (totalClaimed >= coupon.total) {
-      throw new BadRequestException('该优惠券已被领完')
-    }
-
-    const userCoupon = await this.prisma.userCoupon.create({
-      data: {
-        userId,
-        couponId,
-        status: 0,
-        source: 0,
-        expiresAt: coupon.validTo
-      },
-      include: { coupon: true }
-    })
     return this.formatUserCoupon(userCoupon)
   }
 
