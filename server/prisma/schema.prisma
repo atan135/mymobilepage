@@ -17,7 +17,8 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  orders       Order[]
+  orders  Order[]
+  coupons UserCoupon[]
 
   @@map("users")
 }
@@ -130,8 +131,11 @@ model Order {
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @updatedAt @map("updated_at")
 
-  items  OrderItem[]
-  refund RefundRequest?
+  items          OrderItem[]
+  refund         RefundRequest?
+  originalAmount Decimal?      @db.Decimal(10, 2) @map("original_amount")
+  discountAmount Decimal?      @db.Decimal(10, 2) @map("discount_amount")
+  coupons        UserCoupon[]
 
   @@index([userId])
   @@index([status])
@@ -165,4 +169,45 @@ model RefundRequest {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("refund_requests")
+}
+
+model Coupon {
+  id           Int      @id @default(autoincrement())
+  name         String
+  type         Int
+  threshold    Decimal? @db.Decimal(10, 2)
+  amount       Decimal  @db.Decimal(10, 2)
+  description  String?  @db.Text
+  validFrom    DateTime @map("valid_from")
+  validTo      DateTime @map("valid_to")
+  total        Int
+  perUserLimit Int      @default(1) @map("per_user_limit")
+  status       Int      @default(1)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  userCoupons UserCoupon[]
+
+  @@map("coupons")
+}
+
+model UserCoupon {
+  id         Int       @id @default(autoincrement())
+  userId     Int       @map("user_id")
+  user       User      @relation(fields: [userId], references: [id])
+  couponId   Int       @map("coupon_id")
+  coupon     Coupon    @relation(fields: [couponId], references: [id])
+  status     Int       @default(0)
+  source     Int       @default(0)
+  receivedAt DateTime  @default(now()) @map("received_at")
+  usedAt     DateTime? @map("used_at")
+  expiresAt  DateTime? @map("expires_at")
+  orderId    Int?      @unique @map("order_id")
+  order      Order?    @relation(fields: [orderId], references: [id])
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  @@index([userId, status])
+  @@index([couponId])
+  @@map("user_coupons")
 }
