@@ -140,6 +140,7 @@ model Order {
 
   items          OrderItem[]
   refund         RefundRequest?
+  reviews        Review[]
   originalAmount Decimal?      @db.Decimal(10, 2) @map("original_amount")
   discountAmount Decimal?      @db.Decimal(10, 2) @map("discount_amount")
   coupons        UserCoupon[]
@@ -225,6 +226,12 @@ model Review {
   product   Product   @relation(fields: [productId], references: [id])
   userId    Int       @map("user_id")
   user      User      @relation(fields: [userId], references: [id])
+  // 关联订单：仅购买过该商品的用户才允许评价；
+  // null 表示历史数据 / 迁移前数据 / 种子。
+  // 后续 Phase 若开放客户端评价入口, 服务端必须校验
+  // "该 userId 是否下过包含 productId 的 order 且 order.status >= PAID"。
+  orderId   Int?      @map("order_id")
+  order     Order?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
   rating    Int
   content   String    @db.Text
   images    String[]
@@ -236,6 +243,7 @@ model Review {
   @@index([productId, status])
   @@index([userId])
   @@index([status])
+  @@index([orderId])
   @@map("reviews")
 }
 
