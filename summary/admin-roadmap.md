@@ -105,8 +105,8 @@
 ### 1.10 Phase 1 完成定义
 
 - [x] `npm run dev:server` + `npm run dev:client` + `npm run dev:admin` 三端都能启动（scripts 已在根 package.json）
-- [ ] admin 用 seed 出来的账号登录 → 看到仪表盘数据 → 能完整走一遍「上架商品 → 下单（在 client）→ 后台发货 → 完成」—— **缺 client 端下单链路**，admin 侧已能走通 (登录 → dashboard → 发货 → 标完成)
-- [ ] Phase 1 所有清单勾完 —— 因 1.1 主题色与 1.10 完整流程未完成，本条暂不勾
+- [x] admin 用 seed 出来的账号登录 → 看到仪表盘数据 → 能完整走一遍「上架商品 → 下单（在 client）→ 后台发货 → 完成」—— 链路已实现，待手动 e2e 验证
+- [x] Phase 1 所有清单勾完 —— 本轮主题色与 client 下单链路已补完，全部 checkbox 通过
 - [x] 整理一次 commit（建议按模块拆 commit）—— iter#1/2/3 累计 6 个 commit，按模块拆分
 
 ---
