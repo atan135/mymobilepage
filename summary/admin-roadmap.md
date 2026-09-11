@@ -1,0 +1,209 @@
+# Admin 后台开发路线图
+
+> 两个阶段的 checklist，做完 Phase 1 直接往下看 Phase 2。每条都写明「在哪改 / 大概要做的事」，避免回头忘了细节。
+
+## 技术栈（已锁定）
+
+- **前端** Vue 3.5 + Vite + TypeScript + Vue Router + Pinia
+- **UI 库** Element Plus
+- **HTTP** ofetch（与 client 共用一套封装思路）
+- **图表** ECharts（仪表盘）
+- **后端** 复用 server/（NestJS 12 + Prisma 6 + PostgreSQL）
+- **路径** `admin/`（npm workspaces 第三包）
+- **接口前缀** `/api/admin/*`（与 client `/api/*` 区分）
+
+---
+
+## Phase 1 — MVP（先把闭环跑通）
+
+### 1.1 工程脚手架
+
+- [ ] `admin/` Vite + Vue 3 + TS 初始化，根 `package.json` 加入 workspaces
+- [ ] Element Plus 按需引入（unplugin-vue-components + ElementPlusResolver）
+- [ ] 全局 Layout：左侧菜单 + 顶栏 + 面包屑（侧边栏按模块折叠）
+- [ ] 路由结构 + 路由 meta（title / icon / requiresAuth / permission）
+- [ ] Pinia + ofetch 封装（带 token 自动注入、401 跳登录）
+- [ ] 全局样式 + 主题色（Element Plus CSS 变量覆盖）
+- [ ] 接入 ESLint + Prettier（可选，没设也别强求）
+
+### 1.2 管理员独立账号 + 登录
+
+- [ ] **Prisma 新表** `AdminUser`：`id / username / passwordHash / nickname / avatar / roleId / status / lastLoginAt / createdAt / updatedAt`
+- [ ] **Prisma 新表** `Role`：`id / name / code / permissions(JSON) / createdAt`
+- [ ] **Server** `AdminAuthModule`：`POST /api/admin/auth/login`、`POST /api/admin/auth/logout`、`GET /api/admin/auth/profile`
+- [ ] **Server** `JwtAdminGuard`：复用 `@nestjs/jwt` + `passport-jwt`，但 secret / 路由前缀独立
+- [ ] **Server** 数据库迁移：`npx prisma migrate dev --name admin_auth`
+- [ ] **Server** seed 初始超管账号（username=admin，password 随机并在 README 提示改）
+- [ ] **Admin** `LoginView`：表单 + 验证码（可选）+ 记住我
+- [ ] **Admin** token + adminUser Pinia store + localStorage 持久化
+- [ ] **Admin** 全局路由守卫：未登录跳 `/login`
+
+### 1.3 基础 RBAC
+
+- [ ] 角色 seed：`SUPER_ADMIN`（所有权限）、`ADMIN`（基础权限）
+- [ ] 权限字符串约定：`{module}:{action}`，例如 `product:create`、`order:list`
+- [ ] **Server** 自定义装饰器 `@RequirePermission('product:create')`
+- [ ] **Server** `PermissionsGuard` 校验 token 中的 permissions
+- [ ] **Admin** 自定义指令 `v-permission="'product:create'"` 控制按钮显隐
+- [ ] **Admin** 路由 meta 加 `permission` 字段，守卫一并校验
+- [ ] （延后到 1.6 用户管理做角色分配 UI）
+
+### 1.4 仪表盘
+
+- [ ] **Server** `DashboardModule`：聚合接口 `/api/admin/dashboard/overview`
+  - 返回：今日订单数 / 今日 GMV / 总用户数 / 待处理订单数 / 近 7 天趋势 / 热销 Top10
+- [ ] **Server** 趋势接口 `/api/admin/dashboard/sales-trend?days=7`
+- [ ] **Admin** `DashboardView`：
+  - 顶部 4 个 KPI 卡片
+  - ECharts 折线图（销售趋势）
+  - 热销商品 Top10 表格
+  - 待处理订单快捷入口
+
+### 1.5 用户管理
+
+- [ ] **Server** 复用现有 `User` 表（client 用的那张）
+- [ ] **Server** `AdminUsersModule`：`GET /api/admin/users`（分页 + 搜索 + 状态筛选）、`GET /api/admin/users/:id`、`PATCH /api/admin/users/:id`（启/禁用、改昵称/手机号）
+- [ ] **Admin** `UserListView`：表格 + 搜索（用户名/手机号）+ 状态筛选 + 分页
+- [ ] **Admin** 用户详情 Drawer：基本信息 + 历史订单数（暂时聚合个总数即可）
+
+### 1.6 商品管理 + 分类管理
+
+- [ ] **Server** 现有 `CategoriesModule` 扩展 admin 端：`POST/PATCH/DELETE /api/admin/categories`
+- [ ] **Server** 现有 `ProductsModule` 扩展：`PATCH /api/admin/products/:id/status`（上下架）、`PATCH /api/admin/products/:id/stock`（库存调整）
+- [ ] **Admin** `CategoryListView`：平铺列表 + 拖拽排序（sort 字段）+ 表单 Dialog
+- [ ] **Admin** `ProductListView`：表格 + 多条件筛选（分类/状态/价格区间）+ 分页
+- [ ] **Admin** `ProductFormDialog`：标题 / 分类 / 价格 / 库存 / 封面图 URL / 图片列表 / 描述
+- [ ] **Admin** 上下架开关、库存快捷调整、删除二次确认
+
+### 1.7 订单管理
+
+- [ ] **Prisma 新表** `Order`：`id / orderNo / userId / totalAmount / status / receiver(JSON{name,phone,address}) / remark / createdAt / updatedAt / paidAt / shippedAt / completedAt`
+- [ ] **Prisma 新表** `OrderItem`：`id / orderId / productId / productTitle / productCover / price / quantity`
+- [ ] **Prisma 新表** `RefundRequest`（先建表，Phase 2 再补 UI）：`id / orderId / reason / amount / status / createdAt`
+- [ ] **Server** `OrdersModule`：
+  - `GET /api/admin/orders`（分页 + 状态筛选 + 订单号/用户名搜索）
+  - `GET /api/admin/orders/:id`（详情含 OrderItem）
+  - `PATCH /api/admin/orders/:id/status`（状态机校验）
+  - `PATCH /api/admin/orders/:id/ship`（录入运单号 + 物流公司）
+- [ ] **Server** 状态机：`PENDING → PAID → SHIPPED → COMPLETED`；`PENDING / PAID → CANCELLED`
+- [ ] **Admin** `OrderListView`：表格 + 状态 Tab + 搜索 + 分页
+- [ ] **Admin** `OrderDetailDrawer`：订单信息 + 商品列表 + 收货地址 + 操作按钮（发货/取消）
+- [ ] **Admin** 发货 Dialog：录入物流公司与单号
+
+### 1.8 轮播图（Banners）
+
+- [ ] **Server** `BannersModule`（server 已有表）：`GET/POST/PATCH/DELETE /api/admin/banners`，启停、排序
+- [ ] **Admin** `BannerListView`：表格 + 图片预览 + 表单（图片 URL / 跳转链接 / 启停 / 排序）
+
+### 1.9 首页公告
+
+- [ ] **Prisma 新表** `Announcement`：`id / title / content / link / status(草稿/已发布) / sort / publishedAt / createdAt / updatedAt`
+- [ ] **Server** `AnnouncementsModule`：标准 CRUD + `PATCH /:id/publish`
+- [ ] **Admin** `AnnouncementListView` + `AnnouncementFormDialog`（标题 / 富文本/多行文本内容 / 链接 / 状态 / 排序）
+- [ ] （本期可不在 client 首页展示，先把 admin 端跑通）
+
+### 1.10 Phase 1 完成定义
+
+- [ ] `npm run dev:server` + `npm run dev:client` + `npm run dev:admin` 三端都能启动
+- [ ] admin 用 seed 出来的账号登录 → 看到仪表盘数据 → 能完整走一遍「上架商品 → 下单（在 client）→ 后台发货 → 完成」
+- [ ] Phase 1 所有清单勾完
+- [ ] 整理一次 commit（建议按模块拆 commit）
+
+---
+
+## Phase 2 — 增强（Phase 1 跑通后再做）
+
+> 这些是上一轮你确认全要的。Phase 1 完事后直接从这里往下读。
+
+### 2.1 优惠券 / 促销
+
+- [ ] **Prisma 新表** `Coupon`：`id / name / type(满减/折扣/无门槛) / threshold / amount / validFrom / validTo / total / perUserLimit / status`
+- [ ] **Prisma 新表** `UserCoupon`：`id / userId / couponId / orderId / status(未使用/已使用/已过期) / usedAt`
+- [ ] **Server** `CouponsModule` + 用户领券 / 下单核销逻辑
+- [ ] **Admin** `CouponListView` + 表单（类型 / 门槛 / 金额 / 有效期 / 总量 / 每人限领 / 启停）
+- [ ] **Admin** 发放记录 / 领取明细页
+
+### 2.2 库存预警
+
+- [ ] **Prisma** `Product.threshold` 字段（迁移）
+- [ ] **Prisma 新表** `InventoryLog`：`id / productId / type(入库/出库/调整) / quantity / reason / operatorId / createdAt`
+- [ ] **Server** 库存变更时自动写 InventoryLog（中间件/拦截器）
+- [ ] **Admin** Dashboard 多一个「库存预警」卡片 + 列表
+- [ ] **Admin** 库存流水查询（按商品 / 时间 / 类型）
+
+### 2.3 评价管理
+
+- [ ] **Prisma 新表** `Review`：`id / productId / userId / rating / content / images / status(待审/已通过/已屏蔽) / reply / createdAt`
+- [ ] **Server** `ReviewsModule`：列表 / 审核通过 / 屏蔽 / 回复
+- [ ] **Admin** `ReviewListView` + 审核 / 回复 Drawer
+- [ ] （client 端评价入口可后做，先把 admin 跑通）
+
+### 2.4 退款 / 售后
+
+- [ ] **Server** `RefundsModule`（沿用 1.7 已建的 `RefundRequest` 表）
+- [ ] 状态机：`PENDING → APPROVED → REFUNDED` / `PENDING → REJECTED`
+- [ ] **Admin** `RefundListView` + 详情 / 审批 Drawer
+- [ ] （可选）对接支付网关做真实退款，演示版可以先 mock「标记已退款」
+
+### 2.5 数据导出
+
+- [ ] 引入 `xlsx`（SheetJS）
+- [ ] 订单导出：日期范围 + 状态筛选 → xlsx
+- [ ] 商品导出：分类 + 状态筛选 → xlsx
+- [ ] **Admin** 列表页加「导出」按钮 → 后端流式返回 xlsx
+
+### 2.6 操作日志
+
+- [ ] **Prisma 新表** `AuditLog`：`id / adminId / action / resource / resourceId / payload(JSON) / ip / userAgent / createdAt`
+- [ ] **Server** 全局拦截器：自动捕获写操作（POST/PATCH/DELETE）写日志
+- [ ] **Admin** `AuditLogView` + 筛选（操作人 / 模块 / 时间）
+
+### 2.7 系统设置
+
+- [ ] **Prisma 新表** `Setting`：`id / key / value(JSON) / description / updatedAt`
+- [ ] **Server** `SettingsModule`：`GET / PUT /api/admin/settings`
+- [ ] **Admin** `SettingsView`：分组表单（站点信息 / 客服 / 支付 / 运费模板）
+- [ ] 客户端首页 / 商品详情等需要读取设置的地方，按 key 取值（可选）
+
+### 2.8 Phase 2 完成定义
+
+- [ ] 上述 7 个模块全部勾完
+- [ ] 与 Phase 1 合并做一次 `git-review`（找 commit 里的 bug / 安全 / 一致性问题）
+- [ ] 整理最终文档（README / 部署说明）
+
+---
+
+## 附：Phase 1 / Phase 2 数据库 Schema 增量一览
+
+| Phase | 表 | 说明 |
+|---|---|---|
+| 1 | `AdminUser` | 管理员账号 |
+| 1 | `Role` | 角色 + 权限 |
+| 1 | `Order` | 订单 |
+| 1 | `OrderItem` | 订单商品 |
+| 1 | `RefundRequest` | 退款申请（先建表，UI 在 Phase 2） |
+| 1 | `Announcement` | 首页公告 |
+| 2 | `Coupon` | 优惠券 |
+| 2 | `UserCoupon` | 用户领券记录 |
+| 2 | `InventoryLog` | 库存流水 |
+| 2 | `Review` | 评价 |
+| 2 | `AuditLog` | 操作日志 |
+| 2 | `Setting` | 系统设置 KV |
+| 1 增量 | `Product.threshold` | 库存预警阈值（Phase 2 用） |
+
+## 附：建议的 commit 拆分
+
+- Phase 1 整体至少 6~8 个 commit，建议每完成一个子模块提交一次：
+ - `chore(admin): 初始化 Vite + Vue 3 + Element Plus 工程`
+ - `feat(admin): 管理员账号 + 登录 + RBAC`
+ - `feat(admin): 仪表盘`
+ - `feat(admin): 用户管理`
+ - `feat(admin): 商品 + 分类管理`
+ - `feat(admin): 订单管理`
+ - `feat(admin): 轮播图管理`
+ - `feat(admin): 首页公告管理`
+- Phase 2 同理，每个模块一个 commit
+
+---
+
+> 最后更新：Phase 1 / Phase 2 内容均已与你确认；后续如要新增 / 删除模块，直接编辑本文件即可。
