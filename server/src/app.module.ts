@@ -14,9 +14,11 @@ import { AdminAnnouncementsModule } from './admin-announcements/admin-announceme
 import { AdminOrdersModule } from './admin-orders/admin-orders.module'
 import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module'
 import { AdminCouponsModule } from './admin-coupons/admin-coupons.module'
+import { AdminRefundsModule } from './admin-refunds/admin-refunds.module'
 import { ClientBannersModule } from './client-banners/client-banners.module'
 import { ClientOrdersModule } from './client-orders/client-orders.module'
 import { CouponsModule } from './coupons/coupons.module'
+import { RefundsModule } from './refunds/refunds.module'
 
 @Module({
   imports: [
@@ -35,9 +37,11 @@ import { CouponsModule } from './coupons/coupons.module'
     AdminOrdersModule,
     AdminDashboardModule,
     AdminCouponsModule,
+    AdminRefundsModule,
     ClientBannersModule,
     ClientOrdersModule,
-    CouponsModule
+    CouponsModule,
+    RefundsModule
   ]
 })
 export class AppModule {}
