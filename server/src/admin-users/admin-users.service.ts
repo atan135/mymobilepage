@@ -12,7 +12,6 @@ export class AdminUsersService {
     const page = q.page ?? 1
     const pageSize = q.pageSize ?? 10
     const where = {
-      ...(q.status !== undefined ? { status: q.status } : {}),
       ...(q.keyword
         ? {
             OR: [
@@ -61,3 +60,5 @@ export class AdminUsersService {
     return this.prisma.user.update({ where: { id }, data: dto })
   }
 }
+
+
