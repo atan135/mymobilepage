@@ -148,23 +148,22 @@ export class AdminRefundsService {
       }
 
       for (const item of order.items) {
-        const before = await tx.product.findUnique({
-          where: { id: item.productId },
-          select: { stock: true }
-        })
-        if (!before) continue
+        // 单条 SQL UPDATE 原子完成 increment, 用返回值反推 beforeStock。
         const after = await tx.product.update({
           where: { id: item.productId },
           data: {
             stock: { increment: item.quantity },
             sales: { decrement: item.quantity }
-          }
-        })
+          },
+          select: { stock: true }
+        }).catch(() => null)
+        if (!after) continue
+        const beforeStock = after.stock - item.quantity
         await this.inventory.recordChange(tx, {
           productId: item.productId,
           type: 4, // REFUND_IN
           quantity: item.quantity,
-          beforeStock: before.stock,
+          beforeStock,
           afterStock: after.stock,
           reason: `退款 #${id} 入库`,
           operatorId

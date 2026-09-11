@@ -89,23 +89,26 @@ export class ClientOrdersService {
       )
 
       for (const item of items) {
-        const before = await tx.product.findUnique({
-          where: { id: item.productId },
-          select: { stock: true }
-        })
-        if (!before) throw new BadRequestException(`商品不存在: ${item.productId}`)
+        // 单条 SQL UPDATE 原子完成 decrement, 用 update 的返回值 + delta 反推 beforeStock,
+        // 避免 findUnique 与 update 之间被并发 update 插入导致 beforeStock 漂移。
         const after = await tx.product.update({
           where: { id: item.productId },
           data: {
             stock: { decrement: item.quantity },
             sales: { increment: item.quantity }
-          }
+          },
+          select: { stock: true }
         })
+        if (after.stock < 0) {
+          // 库存被并发单/并发减扣到 < 0, 回滚让调用方重试。
+          throw new BadRequestException(`商品库存不足: ${item.productId}`)
+        }
+        const beforeStock = after.stock + item.quantity
         await this.inventory.recordChange(tx, {
           productId: item.productId,
           type: 2, // OUTBOUND
           quantity: -item.quantity,
-          beforeStock: before.stock,
+          beforeStock,
           afterStock: after.stock,
           reason: `订单 ${orderNo} 出库`
         })
@@ -228,23 +231,22 @@ export class ClientOrdersService {
       }
 
       for (const item of order.items) {
-        const before = await tx.product.findUnique({
-          where: { id: item.productId },
-          select: { stock: true }
-        })
-        if (!before) continue
+        // 单条 SQL UPDATE 原子完成 increment, 用返回值反推 beforeStock。
         const after = await tx.product.update({
           where: { id: item.productId },
           data: {
             stock: { increment: item.quantity },
             sales: { decrement: item.quantity }
-          }
-        })
+          },
+          select: { stock: true }
+        }).catch(() => null)
+        if (!after) continue
+        const beforeStock = after.stock - item.quantity
         await this.inventory.recordChange(tx, {
           productId: item.productId,
           type: 5, // CANCEL_IN
           quantity: item.quantity,
-          beforeStock: before.stock,
+          beforeStock,
           afterStock: after.stock,
           reason: `订单 ${order.orderNo} 取消退库`
         })
