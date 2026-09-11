@@ -80,6 +80,32 @@ async function remove(row: AdminCategory) {
   ElMessage.success('已删除')
   load()
 }
+
+/**
+ * 排序：与相邻行交换 sort 值。
+ * 先按 sort 升序、id 升序排好，再交换。
+ */
+async function move(row: AdminCategory, dir: 'up' | 'down') {
+  const sorted = [...list.value].sort((a, b) => {
+    if (a.sort !== b.sort) return a.sort - b.sort
+    return a.id - b.id
+  })
+  const idx = sorted.findIndex((c) => c.id === row.id)
+  const target = dir === 'up' ? sorted[idx - 1] : sorted[idx + 1]
+  if (!target) return
+  const a = sorted[idx]
+  const b = target
+  try {
+    await Promise.all([
+      updateAdminCategory(a.id, { sort: b.sort }),
+      updateAdminCategory(b.id, { sort: a.sort })
+    ])
+    ElMessage.success(dir === 'up' ? '已上移' : '已下移')
+  } catch {
+    ElMessage.error('排序失败')
+  }
+  load()
+}
 </script>
 
 <template>
@@ -87,13 +113,14 @@ async function remove(row: AdminCategory) {
     <el-card>
       <div class="toolbar">
         <el-button v-permission="'category:create'" type="primary" @click="openCreate">新建分类</el-button>
+        <span class="muted">点击「上移 / 下移」调整展示顺序</span>
       </div>
 
       <el-table v-loading="loading" :data="list" stripe row-key="id">
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column label="图标" width="80">
           <template #default="{ row }">
-            <el-image v-if="row.icon" :src="row.icon" style="width:36px;height:36px;border-radius:4px" fit="cover" />
+            <el-image v-if="(row as AdminCategory).icon" :src="(row as AdminCategory).icon ?? undefined" style="width:36px;height:36px;border-radius:4px" fit="cover" />
             <span v-else class="muted">无</span>
           </template>
         </el-table-column>
@@ -101,13 +128,29 @@ async function remove(row: AdminCategory) {
         <el-table-column prop="sort" label="排序" width="100" />
         <el-table-column label="商品数" width="100">
           <template #default="{ row }">
-            {{ row._count?.products ?? 0 }}
+            {{ (row as AdminCategory)._count?.products ?? 0 }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="180" fixed="right">
-          <template #default="{ row }">
-            <el-button v-permission="'category:edit'" link type="primary" @click="openEdit(row)">编辑</el-button>
-            <el-button v-permission="'category:delete'" link type="danger" @click="remove(row)">删除</el-button>
+        <el-table-column label="操作" width="280" fixed="right">
+          <template #default="{ row, $index }">
+            <el-button
+              v-permission="'category:edit'"
+              link
+              :disabled="$index === 0"
+              @click="move(row as AdminCategory, 'up')"
+            >
+              上移
+            </el-button>
+            <el-button
+              v-permission="'category:edit'"
+              link
+              :disabled="$index === list.length - 1"
+              @click="move(row as AdminCategory, 'down')"
+            >
+              下移
+            </el-button>
+            <el-button v-permission="'category:edit'" link type="primary" @click="openEdit(row as AdminCategory)">编辑</el-button>
+            <el-button v-permission="'category:delete'" link type="danger" @click="remove(row as AdminCategory)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -139,6 +182,6 @@ async function remove(row: AdminCategory) {
 
 <style scoped>
 .page { display: flex; flex-direction: column; gap: 12px; }
-.toolbar { margin-bottom: 12px; }
+.toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
 .muted { color: #909399; font-size: 12px; }
 </style>

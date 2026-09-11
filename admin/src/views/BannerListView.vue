@@ -141,8 +141,8 @@ async function remove(row: AdminBanner) {
         </el-table-column>
         <el-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
-            <el-button v-permission="'banner:edit'" link type="primary" @click="openEdit(row)">编辑</el-button>
-            <el-button v-permission="'banner:delete'" link type="danger" @click="remove(row)">删除</el-button>
+            <el-button v-permission="'banner:edit'" link type="primary" @click="openEdit(row as AdminBanner)">编辑</el-button>
+            <el-button v-permission="'banner:delete'" link type="danger" @click="remove(row as AdminBanner)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>

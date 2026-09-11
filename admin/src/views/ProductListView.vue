@@ -251,14 +251,14 @@ const coverImagesText = computed({
         </el-table-column>
         <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
-            <el-button v-permission="'product:on_off'" link :type="row.status === 1 ? 'danger' : 'success'" @click="toggleStatus(row)">
+            <el-button v-permission="'product:on_off'" link :type="row.status === 1 ? 'danger' : 'success'" @click="toggleStatus(row as AdminProduct)">
               {{ row.status === 1 ? '下架' : '上架' }}
             </el-button>
-            <el-button v-permission="'product:adjust_stock'" link type="primary" @click="openStock(row)">
+            <el-button v-permission="'product:adjust_stock'" link type="primary" @click="openStock(row as AdminProduct)">
               调库存
             </el-button>
-            <el-button v-permission="'product:edit'" link type="primary" @click="openEdit(row)">编辑</el-button>
-            <el-button v-permission="'product:delete'" link type="danger" @click="remove(row)">删除</el-button>
+            <el-button v-permission="'product:edit'" link type="primary" @click="openEdit(row as AdminProduct)">编辑</el-button>
+            <el-button v-permission="'product:delete'" link type="danger" @click="remove(row as AdminProduct)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>

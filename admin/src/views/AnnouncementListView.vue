@@ -156,20 +156,20 @@ async function remove(row: AdminAnnouncement) {
         </el-table-column>
         <el-table-column label="操作" width="260" fixed="right">
           <template #default="{ row }">
-            <el-button v-permission="'announcement:edit'" link type="primary" @click="openEdit(row)">
+            <el-button v-permission="'announcement:edit'" link type="primary" @click="openEdit(row as AdminAnnouncement)">
               编辑
             </el-button>
             <template v-if="row.status === 1">
-              <el-button v-permission="'announcement:publish'" link type="warning" @click="unpublish(row)">
+              <el-button v-permission="'announcement:publish'" link type="warning" @click="unpublish(row as AdminAnnouncement)">
                 下架
               </el-button>
             </template>
             <template v-else>
-              <el-button v-permission="'announcement:publish'" link type="success" @click="publish(row)">
+              <el-button v-permission="'announcement:publish'" link type="success" @click="publish(row as AdminAnnouncement)">
                 发布
               </el-button>
             </template>
-            <el-button v-permission="'announcement:delete'" link type="danger" @click="remove(row)">
+            <el-button v-permission="'announcement:delete'" link type="danger" @click="remove(row as AdminAnnouncement)">
               删除
             </el-button>
           </template>

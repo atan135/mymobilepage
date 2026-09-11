@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { listAdminUsers, updateAdminUser, type AdminUser, type AdminUserQuery } from '../api/admin-users'
+import { listAdminUsers, getAdminUser, updateAdminUser, type AdminUser, type AdminUserQuery } from '../api/admin-users'
 
 const loading = ref(false)
 const list = ref<AdminUser[]>([])
@@ -15,7 +15,7 @@ const editForm = reactive({ nickname: '', phone: '', status: 1 as 0 | 1 })
 async function load() {
   loading.value = true
   try {
-    const res = await listAdminUsers({ ...query, status: query.status })
+    const res = await listAdminUsers({ ...query })
     list.value = res.list
     total.value = res.total
   } finally {
@@ -66,6 +66,22 @@ async function toggleStatus(row: AdminUser) {
   ElMessage.success('已更新')
   load()
 }
+
+// 用户详情
+const detailVisible = ref(false)
+const detailLoading = ref(false)
+const detail = ref<AdminUser | null>(null)
+
+async function openDetail(row: AdminUser) {
+  detailVisible.value = true
+  detail.value = null
+  detailLoading.value = true
+  try {
+    detail.value = await getAdminUser(row.id)
+  } finally {
+    detailLoading.value = false
+  }
+}
 </script>
 
 <template>
@@ -110,13 +126,21 @@ async function toggleStatus(row: AdminUser) {
             {{ new Date(row.createdAt).toLocaleString() }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
+            <el-button
+              v-permission="'user:detail'"
+              link
+              type="primary"
+              @click="openDetail(row as AdminUser)"
+            >
+              详情
+            </el-button>
             <el-button
               v-permission="'user:edit'"
               link
               type="primary"
-              @click="openEdit(row)"
+              @click="openEdit(row as AdminUser)"
             >
               编辑
             </el-button>
@@ -124,7 +148,7 @@ async function toggleStatus(row: AdminUser) {
               v-permission="'user:edit'"
               link
               :type="row.status === 1 ? 'danger' : 'success'"
-              @click="toggleStatus(row)"
+              @click="toggleStatus(row as AdminUser)"
             >
               {{ row.status === 1 ? '禁用' : '启用' }}
             </el-button>
@@ -144,6 +168,7 @@ async function toggleStatus(row: AdminUser) {
       />
     </el-card>
 
+    <!-- 编辑用户 -->
     <el-dialog v-model="editVisible" title="编辑用户" width="500px">
       <el-form label-width="80px">
         <el-form-item label="账号">
@@ -167,6 +192,38 @@ async function toggleStatus(row: AdminUser) {
         <el-button type="primary" @click="submitEdit">保存</el-button>
       </template>
     </el-dialog>
+
+    <!-- 详情抽屉 -->
+    <el-drawer
+      v-model="detailVisible"
+      :title="detail ? `用户 ${detail.username}` : '用户详情'"
+      size="420px"
+      direction="rtl"
+    >
+      <div v-loading="detailLoading" class="detail">
+        <template v-if="detail">
+          <el-descriptions :column="1" border size="small">
+            <el-descriptions-item label="账号">{{ detail.username }}</el-descriptions-item>
+            <el-descriptions-item label="昵称">{{ detail.nickname ?? '-' }}</el-descriptions-item>
+            <el-descriptions-item label="手机号">{{ detail.phone ?? '-' }}</el-descriptions-item>
+            <el-descriptions-item label="状态">
+              <el-tag :type="detail.status === 1 ? 'success' : 'info'">
+                {{ detail.status === 1 ? '启用' : '禁用' }}
+              </el-tag>
+            </el-descriptions-item>
+            <el-descriptions-item label="历史订单数">
+              <el-tag type="primary">{{ detail._count?.orders ?? 0 }}</el-tag>
+            </el-descriptions-item>
+            <el-descriptions-item label="注册时间">
+              {{ new Date(detail.createdAt).toLocaleString() }}
+            </el-descriptions-item>
+            <el-descriptions-item label="更新时间">
+              {{ new Date(detail.updatedAt).toLocaleString() }}
+            </el-descriptions-item>
+          </el-descriptions>
+        </template>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
@@ -174,4 +231,5 @@ async function toggleStatus(row: AdminUser) {
 .page { display: flex; flex-direction: column; gap: 12px; }
 .filter { margin-bottom: 12px; }
 .pager { margin-top: 16px; justify-content: flex-end; }
+.detail { padding: 0 4px; }
 </style>

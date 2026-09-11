@@ -10,6 +10,7 @@ export interface AdminUser {
   status: number
   createdAt: string
   updatedAt: string
+  _count?: { orders: number }
 }
 
 export interface AdminUserQuery {
