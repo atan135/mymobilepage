@@ -9,6 +9,7 @@ import {
   type AdminInventoryLogItem,
   type InventoryType
 } from '../api/admin-inventory'
+import { exportInventoryLogs } from '../api/admin-exports'
 
 const loading = ref(false)
 const list = ref<AdminInventoryLogItem[]>([])
@@ -64,6 +65,43 @@ function onReset() {
   load()
 }
 
+// 导出
+const exportVisible = ref(false)
+const exportForm = reactive({
+  type: undefined as InventoryType | undefined,
+  keyword: '',
+  dateFrom: '',
+  dateTo: ''
+})
+const exporting = ref(false)
+
+function openExport() {
+  exportForm.type = query.type
+  exportForm.keyword = query.keyword
+  exportForm.dateFrom = ''
+  exportForm.dateTo = ''
+  exportVisible.value = true
+}
+
+async function submitExport() {
+  exporting.value = true
+  try {
+    await exportInventoryLogs({
+      type: exportForm.type,
+      keyword: exportForm.keyword || undefined,
+      dateFrom: exportForm.dateFrom || undefined,
+      dateTo: exportForm.dateTo || undefined
+    })
+    ElMessage.success('已下载')
+    exportVisible.value = false
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : '导出失败'
+    ElMessage.error(msg)
+  } finally {
+    exporting.value = false
+  }
+}
+
 function fmtQty(q: number): string {
   if (q > 0) return '+' + q
   return String(q)
@@ -101,6 +139,9 @@ const activeType = computed(() => String(query.type ?? ''))
         <el-form-item>
           <el-button type="primary" @click="onSearch">查询</el-button>
           <el-button @click="onReset">重置</el-button>
+          <el-button v-permission="'export:inventory_logs'" type="success" plain @click="openExport">
+            导出 Excel
+          </el-button>
         </el-form-item>
       </el-form>
 
@@ -171,6 +212,41 @@ const activeType = computed(() => String(query.type ?? ''))
         @size-change="load"
       />
     </el-card>
+
+    <!-- 导出 Dialog -->
+    <el-dialog v-model="exportVisible" title="导出库存流水" width="480px">
+      <el-form label-width="80px">
+        <el-form-item label="流水类型">
+          <el-select v-model="exportForm.type" placeholder="全部" clearable style="width: 100%">
+            <el-option v-for="t in INVENTORY_TYPES" :key="t" :label="INVENTORY_TYPE_LABELS[t]" :value="t" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="关键字">
+          <el-input v-model="exportForm.keyword" placeholder="商品标题" clearable />
+        </el-form-item>
+        <el-form-item label="日期范围">
+          <el-date-picker
+            v-model="exportForm.dateFrom"
+            type="date"
+            placeholder="起始日"
+            value-format="YYYY-MM-DD"
+            style="width: 48%"
+          />
+          <span style="margin: 0 4px">至</span>
+          <el-date-picker
+            v-model="exportForm.dateTo"
+            type="date"
+            placeholder="结束日"
+            value-format="YYYY-MM-DD"
+            style="width: 48%"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="exportVisible = false">取消</el-button>
+        <el-button type="primary" :loading="exporting" @click="submitExport">导出</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 

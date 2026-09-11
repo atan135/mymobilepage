@@ -11,6 +11,7 @@ import {
   type AdminProduct,
   type AdminProductQuery
 } from '../api/admin-products'
+import { exportProducts } from '../api/admin-exports'
 import { listAdminCategories } from '../api/admin-categories'
 
 import type { AdminCategory } from '../api/types'
@@ -99,6 +100,40 @@ function onReset() {
   query.maxPrice = undefined
   query.page = 1
   load()
+}
+
+// 导出
+const exportVisible = ref(false)
+const exportForm = reactive({
+  categoryId: undefined as number | undefined,
+  status: undefined as 0 | 1 | undefined,
+  keyword: ''
+})
+const exporting = ref(false)
+
+function openExport() {
+  exportForm.categoryId = query.categoryId
+  exportForm.status = query.status as 0 | 1 | undefined
+  exportForm.keyword = query.keyword
+  exportVisible.value = true
+}
+
+async function submitExport() {
+  exporting.value = true
+  try {
+    await exportProducts({
+      categoryId: exportForm.categoryId,
+      status: exportForm.status,
+      keyword: exportForm.keyword || undefined
+    })
+    ElMessage.success('已下载')
+    exportVisible.value = false
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : '导出失败'
+    ElMessage.error(msg)
+  } finally {
+    exporting.value = false
+  }
 }
 
 function openCreate() {
@@ -219,6 +254,9 @@ const coverImagesText = computed({
         <el-form-item>
           <el-button type="primary" @click="onSearch">查询</el-button>
           <el-button @click="onReset">重置</el-button>
+          <el-button v-permission="'export:products'" type="success" plain @click="openExport">
+            导出 Excel
+          </el-button>
           <el-button v-permission="'product:create'" type="success" @click="openCreate">新建商品</el-button>
         </el-form-item>
       </el-form>
@@ -333,6 +371,31 @@ const coverImagesText = computed({
       <template #footer>
         <el-button @click="stockDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="submitStock">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 导出 Dialog -->
+    <el-dialog v-model="exportVisible" title="导出商品" width="480px">
+      <el-form label-width="80px">
+        <el-form-item label="分类">
+          <el-select v-model="exportForm.categoryId" placeholder="全部分类" clearable style="width: 100%">
+            <el-option v-for="c in categories" :key="c.id" :label="c.name" :value="c.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-radio-group v-model="exportForm.status">
+            <el-radio :value="undefined">全部</el-radio>
+            <el-radio :value="1">上架</el-radio>
+            <el-radio :value="0">下架</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="关键字">
+          <el-input v-model="exportForm.keyword" placeholder="商品标题" clearable />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="exportVisible = false">取消</el-button>
+        <el-button type="primary" :loading="exporting" @click="submitExport">导出</el-button>
       </template>
     </el-dialog>
   </div>
