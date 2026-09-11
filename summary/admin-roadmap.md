@@ -117,19 +117,32 @@
 
 ### 2.1 优惠券 / 促销
 
-- [ ] **Prisma 新表** `Coupon`：`id / name / type(满减/折扣/无门槛) / threshold / amount / validFrom / validTo / total / perUserLimit / status`
-- [ ] **Prisma 新表** `UserCoupon`：`id / userId / couponId / orderId / status(未使用/已使用/已过期) / usedAt`
-- [ ] **Server** `CouponsModule` + 用户领券 / 下单核销逻辑
-- [ ] **Admin** `CouponListView` + 表单（类型 / 门槛 / 金额 / 有效期 / 总量 / 每人限领 / 启停）
-- [ ] **Admin** 发放记录 / 领取明细页
+- [x] **Prisma 新表** `Coupon`：`id / name / type(满减/折扣/无门槛) / threshold / amount / validFrom / validTo / total / perUserLimit / status`
+- [x] **Prisma 新表** `UserCoupon`：`id / userId / couponId / orderId / status(未使用/已使用/已过期) / usedAt`
+- [x] **Server** `CouponsModule` + 用户领券 / 下单核销逻辑
+- [x] **Admin** `CouponListView` + 表单（类型 / 门槛 / 金额 / 有效期 / 总量 / 每人限领 / 启停）
+- [x] **Admin** 发放记录 / 领取明细页
+
+> 实现要点：4 个 commit（9953962 schema / ebcf239 server / ba9bca2 admin / 68beee9 client） + 9ea652a docs；原 roadmap 勾选 commit 标题写了但实际只加了换行（漏勾 bug），本轮回补。
 
 ### 2.2 库存预警
 
-- [ ] **Prisma** `Product.threshold` 字段（迁移）
-- [ ] **Prisma 新表** `InventoryLog`：`id / productId / type(入库/出库/调整) / quantity / reason / operatorId / createdAt`
-- [ ] **Server** 库存变更时自动写 InventoryLog（中间件/拦截器）
-- [ ] **Admin** Dashboard 多一个「库存预警」卡片 + 列表
-- [ ] **Admin** 库存流水查询（按商品 / 时间 / 类型）
+- [x] **Prisma** `Product.threshold` 字段（迁移）
+- [x] **Prisma 新表** `InventoryLog`：`id / productId / type(入库/出库/调整) / quantity / reason / operatorId / createdAt`
+- [x] **Server** 库存变更时自动写 InventoryLog（中间件/拦截器）
+- [x] **Admin** Dashboard 多一个「库存预警」卡片 + 列表
+- [x] **Admin** 库存流水查询（按商品 / 时间 / 类型）
+
+> 实现要点：
+> - migration `20260911132309_phase2_inventory` 已应用；`Product.threshold @default(10)` + `inventory_logs` 表 + User/Product 反向关联 + 2 索引
+> - 流水类型：1 入库 / 2 出库 / 3 调整 / 4 退款入库 / 5 取消退库（取消与退款语义不同，拆独立 type）
+> - 公共 `InventoryService.recordChange(tx, ...)` 替代 4 处散落的内联 update；所有变更在同 `$transaction` 内
+> - `operatorId`：admin 端写当前操作人（`req.user.sub`），客户端自动行为写 null
+> - 预警范围：`stock <= threshold AND status=1` 的上架商品，按缺口降序
+> - 权限码：`types.ts` 的 `inventory:*` 通配展开为 `inventory:list` + `inventory:warning`
+> - Dashboard overview 加 `lowStockCount` + `lowStockProducts`（Top 5）
+> - seed 给最后 3 个商品（id 22~24）threshold=90，制造预警样本
+> - INBOUND（type=1）无 UI 入口，预留待后续手动入库功能
 
 ### 2.3 评价管理
 
@@ -223,6 +236,6 @@
 
 ---
 
-> 最后更新：Phase 1 主体（6 节子模块）已完成并勾选；剩 1.1 主题色、1.10 完整 e2e 流程未完成；Phase 2 未启动。roadmap 编辑权限保留，后续如要新增 / 删除模块，直接编辑本文件即可。
+> 最后更新：Phase 1 全部完成；Phase 2 / 2.1~2.4 已完成并勾选；剩余 2.5 数据导出 / 2.6 操作日志 / 2.7 系统设置 / 2.8 Phase 2 完成定义。roadmap 编辑权限保留，后续如要新增 / 删除模块，直接编辑本文件即可。
 
 
