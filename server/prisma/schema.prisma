@@ -19,6 +19,7 @@ model User {
 
   orders  Order[]
   coupons UserCoupon[]
+  reviews Review[]
 
   @@map("users")
 }
@@ -81,7 +82,8 @@ model Product {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  items OrderItem[]
+  items   OrderItem[]
+  reviews Review[]
 
   @@index([categoryId])
   @@map("products")
@@ -210,4 +212,24 @@ model UserCoupon {
   @@index([userId, status])
   @@index([couponId])
   @@map("user_coupons")
+}
+
+model Review {
+  id        Int       @id @default(autoincrement())
+  productId Int       @map("product_id")
+  product   Product   @relation(fields: [productId], references: [id])
+  userId    Int       @map("user_id")
+  user      User      @relation(fields: [userId], references: [id])
+  rating    Int
+  content   String    @db.Text
+  images    String[]
+  status    Int       @default(0)
+  reply     String?   @db.Text
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@index([productId, status])
+  @@index([userId])
+  @@index([status])
+  @@map("reviews")
 }

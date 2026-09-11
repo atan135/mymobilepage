@@ -28,7 +28,9 @@ const ADMIN_PERMISSIONS = [
   'coupon:list', 'coupon:create', 'coupon:edit',
   'coupon:on_off', 'coupon:delete', 'coupon:grant',
   'refund:list', 'refund:detail', 'refund:approve',
-  'refund:reject', 'refund:refund'
+  'refund:reject', 'refund:refund',
+  'review:list', 'review:detail', 'review:approve',
+  'review:block', 'review:reply'
 ]
 
 const seedUsers = [
@@ -46,6 +48,7 @@ async function main(): Promise<void> {
   await prisma.order.deleteMany()
   await prisma.announcement.deleteMany()
   await prisma.banner.deleteMany()
+  await prisma.review.deleteMany()
   await prisma.product.deleteMany()
   await prisma.category.deleteMany()
 
@@ -162,6 +165,36 @@ async function main(): Promise<void> {
     void order
   }
 
+  console.log('Seeding reviews...')
+  const reviewTemplates = [
+    { userIdx: 0, productIdx: 0, rating: 5, content: '质感很棒，物流也快，下次还会回购！', images: [], status: 1, reply: '感谢您的支持，欢迎下次光临～' },
+    { userIdx: 1, productIdx: 1, rating: 4, content: '整体不错，包装也挺精致的，性价比可以。', images: ['https://picsum.photos/seed/r1/300/300'], status: 1, reply: null },
+    { userIdx: 2, productIdx: 2, rating: 5, content: '比想象中还好，强烈推荐给朋友们。', images: ['https://picsum.photos/seed/r2/300/300', 'https://picsum.photos/seed/r3/300/300'], status: 1, reply: '谢谢认可，我们会继续努力！' },
+    { userIdx: 3, productIdx: 4, rating: 3, content: '中规中矩，价格再便宜点就更好了。', images: [], status: 1, reply: null },
+    { userIdx: 4, productIdx: 6, rating: 4, content: '客服态度很好，发货也及时。', images: [], status: 1, reply: '感谢您的好评，期待您的下一次光临。' },
+    { userIdx: 0, productIdx: 8, rating: 2, content: '一般般，材质感觉不太对。', images: [], status: 1, reply: null },
+    { userIdx: 1, productIdx: 3, rating: 3, content: '等了很久才发货，体验一般。', images: [], status: 0, reply: null },
+    { userIdx: 2, productIdx: 10, rating: 4, content: '不错，家人也挺喜欢。', images: [], status: 0, reply: null },
+    { userIdx: 3, productIdx: 12, rating: 5, content: '回购第二次了，质量一如既往地稳定。', images: [], status: 0, reply: null },
+    { userIdx: 4, productIdx: 15, rating: 1, content: '垃圾商品，跟图片完全不一样。', images: [], status: 2, reply: null },
+    { userIdx: 0, productIdx: 18, rating: 1, content: '差评，差到无法形容。', images: [], status: 2, reply: null }
+  ]
+  let reviewCount = 0
+  for (const t of reviewTemplates) {
+    await prisma.review.create({
+      data: {
+        userId: createdUsers[t.userIdx].id,
+        productId: createdProducts[t.productIdx].id,
+        rating: t.rating,
+        content: t.content,
+        images: t.images,
+        status: t.status,
+        reply: t.reply
+      }
+    })
+    reviewCount++
+  }
+  console.log(`  -> inserted ${reviewCount} reviews`)
   console.log('Seeding admin roles...')
   const superRole = await prisma.role.create({
     data: {
@@ -206,6 +239,7 @@ async function main(): Promise<void> {
     products: await prisma.product.count(),
     banners: await prisma.banner.count(),
     orders: await prisma.order.count(),
+    reviews: reviewCount,
     roles: await prisma.role.count(),
     adminUsers: await prisma.adminUser.count()
   }
@@ -223,5 +257,6 @@ main()
   .finally(async () => {
     await prisma.$disconnect()
   })
+
 
 
