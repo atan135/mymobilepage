@@ -35,6 +35,7 @@ model AdminUser {
   role         Role      @relation(fields: [roleId], references: [id])
   lastLoginAt   DateTime? @map("last_login_at")
   inventoryLogs InventoryLog[]
+  auditLogs     AuditLog[]
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
@@ -253,5 +254,22 @@ model InventoryLog {
   @@index([productId, createdAt])
   @@index([type, createdAt])
   @@map("inventory_logs")
+}
+
+model AuditLog {
+  id         Int       @id @default(autoincrement())
+  adminId    Int?      @map("admin_id")
+  admin      AdminUser? @relation(fields: [adminId], references: [id])
+  action     String
+  resource   String
+  resourceId Int?      @map("resource_id")
+  payload    Json?
+  ip         String?
+  userAgent  String?    @map("user_agent")
+  createdAt  DateTime   @default(now()) @map("created_at")
+
+  @@index([adminId, createdAt])
+  @@index([resource, createdAt])
+  @@map("audit_logs")
 }
 

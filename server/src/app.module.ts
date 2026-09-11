@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common'
+import { APP_INTERCEPTOR } from '@nestjs/core'
 import { ConfigModule } from '@nestjs/config'
 import { PrismaModule } from './prisma/prisma.module'
 import { AuthModule } from './auth/auth.module'
@@ -18,6 +19,8 @@ import { AdminRefundsModule } from './admin-refunds/admin-refunds.module'
 import { AdminReviewsModule } from './admin-reviews/admin-reviews.module'
 import { AdminInventoryModule } from './admin-inventory/admin-inventory.module'
 import { InventoryModule } from './inventory/inventory.module'
+import { AuditModule } from './audit/audit.module'
+import { AuditInterceptor } from './audit/audit.interceptor'
 import { ClientBannersModule } from './client-banners/client-banners.module'
 import { ClientOrdersModule } from './client-orders/client-orders.module'
 import { CouponsModule } from './coupons/coupons.module'
@@ -44,6 +47,7 @@ import { RefundsModule } from './refunds/refunds.module'
     AdminReviewsModule,
     AdminInventoryModule,
     InventoryModule,
+    AuditModule,
     ClientBannersModule,
     ClientOrdersModule,
     CouponsModule,

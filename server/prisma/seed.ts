@@ -31,6 +31,7 @@ const ADMIN_PERMISSIONS = [
   'refund:reject', 'refund:refund',
   'inventory:list', 'inventory:warning',
   'export:orders', 'export:products', 'export:inventory_logs',
+  'audit:view',
   'review:list', 'review:detail', 'review:approve',
   'review:block', 'review:reply'
 ]
