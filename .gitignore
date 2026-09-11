@@ -27,3 +27,8 @@ Thumbs.db
 
 # Auto-generated
 client/src/types/components.d.ts
+# vue-tsc -b build outputs (generated when building client/)
+client/vite.config.d.ts
+client/vite.config.js
+client/vite.config.*.js
+client/vite.config.*.d.ts
