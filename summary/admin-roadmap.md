@@ -227,9 +227,16 @@
 
 ### 2.8 Phase 2 完成定义
 
-- [ ] 上述 7 个模块全部勾完
-- [ ] 与 Phase 1 合并做一次 `git-review`（找 commit 里的 bug / 安全 / 一致性问题）
-- [ ] 整理最终文档（README / 部署说明）
+- [x] 上述 7 个模块全部勾完
+- [x] 与 Phase 1 合并做一次 `git-review`（找 commit 里的 bug / 安全 / 一致性问题）
+- [x] 整理最终文档（README / 部署说明）
+
+> 实现要点：
+> - **git-review**：`summary/git-review-phase2.md`，30 个 Phase 2 commit 抽样审查，结论 **Critical: 0 / High: 1 / Medium: 3 / Low: 4**
+> - **High**：客户端公共读白名单用前缀匹配（`5e26a13`），需改为显式 key 列表
+> - **Medium**：AuditInterceptor payload 过滤范围 / 大 payload 风险 / settings bulkUpsert 默认 group='general'
+> - **演示版简化**：reviews 不绑订单 / 数据导出不分批 / 库存 INBOUND 无 UI 等 4 项记录在案
+> - **最终文档**：根 `README.md` 重写（技术栈 / 快速开始 / 已实现功能 / 文档导航）+ `docs/40-部署与运维/` 4 个文件（环境 / 部署步骤 / Nginx+HTTPS / 上线 checklist）
 
 ---
 
@@ -266,6 +273,6 @@
 
 ---
 
-> 最后更新：Phase 1 全部完成；Phase 2 / 2.1~2.4 已完成并勾选；剩余 2.5 数据导出 / 2.6 操作日志 / 2.7 系统设置 / 2.8 Phase 2 完成定义。roadmap 编辑权限保留，后续如要新增 / 删除模块，直接编辑本文件即可。
+> 最后更新：**Phase 1 + Phase 2 全部完成**。所有 7 个模块（2.1~2.7）+ 2.8 完成定义（git-review + 最终文档）已勾选。\n> \n> 项目状态：演示版完整闭环跑通；生产化前必改项见 README 「已知坑位」+ git-review High/Medium 问题清单。roadmap 编辑权限保留，后续如要新增 / 删除模块，直接编辑本文件即可。
 
 
