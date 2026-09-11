@@ -246,15 +246,35 @@ export class CouponsService {
   }
 
   /**
-   * 订单创建时复用：校验 + 计算折扣金额。
-   * 失败抛 BadRequestException（与 preview 共用同一种语义）。
+   * 事务外版本（预览 / 试算）：校验 + 计算折扣金额。
+   * 失败抛 BadRequestException。
+   *
+   * 安全说明：此方法只用于纯展示。如果要在订单创建事务中真正消费 UserCoupon，
+   * 必须调用 resolveDiscountInTx，把校验与后续 update 放到同一个交互式事务内，
+   * 否则会出现"同一张券被两个订单同时使用"或"已停用优惠券仍可下单"。
    */
   async resolveDiscount(
     userId: number,
     couponId: number,
     originalAmount: number
   ): Promise<{ userCouponId: number; discountAmount: number }> {
-    const userCoupon = await this.prisma.userCoupon.findUnique({
+    return this.resolveDiscountInTx(this.prisma, userId, couponId, originalAmount)
+  }
+
+  /**
+   * 事务内版本：接受 Prisma.TransactionClient，将校验与调用方的后续 update
+   * 放到同一个 $transaction 中，避免并发消费同一张 UserCoupon。
+   *
+   * 注意：调用方仍需对 UserCoupon 做条件 update where: { id, status: 0 }，
+   * 并在 matched === 0 时抛 BadRequestException，形成闭环防护。
+   */
+  async resolveDiscountInTx(
+    tx: Prisma.TransactionClient,
+    userId: number,
+    couponId: number,
+    originalAmount: number
+  ): Promise<{ userCouponId: number; discountAmount: number }> {
+    const userCoupon = await tx.userCoupon.findUnique({
       where: { id: couponId },
       include: { coupon: true }
     })

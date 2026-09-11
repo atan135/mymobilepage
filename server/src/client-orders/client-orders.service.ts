@@ -66,24 +66,27 @@ export class ClientOrdersService {
       items.reduce((s, it) => s + it.price * it.quantity, 0).toFixed(2)
     )
 
-    let discountAmount = 0
-    let userCouponId: number | null = null
-    if (dto.couponId !== undefined) {
-      const r = await this.couponsSvc.resolveDiscount(
-        userId,
-        dto.couponId,
-        originalAmount
-      )
-      discountAmount = r.discountAmount
-      userCouponId = r.userCouponId
-    }
-    const totalAmount = Number(
-      Math.max(0, originalAmount - discountAmount).toFixed(2)
-    )
-
     const orderNo = this.generateOrderNo()
 
     const order = await this.prisma.$transaction(async (tx) => {
+      // 在事务内校验 + 锁定 UserCoupon，避免并发消费同一张券；
+      // 事务外算的折扣金额只是 hint，真正落库以事务内计算为准。
+      let discountAmount = 0
+      let userCouponId: number | null = null
+      if (dto.couponId !== undefined) {
+        const r = await this.couponsSvc.resolveDiscountInTx(
+          tx,
+          userId,
+          dto.couponId,
+          originalAmount
+        )
+        discountAmount = r.discountAmount
+        userCouponId = r.userCouponId
+      }
+      const totalAmount = Number(
+        Math.max(0, originalAmount - discountAmount).toFixed(2)
+      )
+
       for (const item of items) {
         const before = await tx.product.findUnique({
           where: { id: item.productId },
@@ -124,14 +127,20 @@ export class ClientOrdersService {
       })
 
       if (userCouponId !== null) {
-        await tx.userCoupon.update({
-          where: { id: userCouponId },
+        // 条件 update where: { id, status: 0 }：
+        // 若 status 已被另一并发事务改成 1（已使用），count === 0，
+        // 必须抛 BadRequestException 整笔回滚，避免重复消费。
+        const updated = await tx.userCoupon.updateMany({
+          where: { id: userCouponId, status: 0 },
           data: {
             status: 1,
             usedAt: new Date(),
             orderId: created.id
           }
         })
+        if (updated.count !== 1) {
+          throw new BadRequestException('优惠券已被使用，请重新选择')
+        }
       }
 
       return created
