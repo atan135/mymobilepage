@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException
 } from '@nestjs/common'
@@ -217,6 +218,15 @@ export class ClientOrdersService {
     }
 
     await this.prisma.$transaction(async (tx) => {
+      // 条件 update：仅当 status 仍为 0/1 才允许转为 4，count !== 1 说明已被并发请求处理。
+      const updated = await tx.order.updateMany({
+        where: { id, userId, status: { in: [0, 1] } },
+        data: { status: 4, cancelledAt: new Date() }
+      })
+      if (updated.count !== 1) {
+        throw new ConflictException('订单状态已变更，请刷新后重试')
+      }
+
       for (const item of order.items) {
         const before = await tx.product.findUnique({
           where: { id: item.productId },
@@ -250,11 +260,6 @@ export class ClientOrdersService {
           }
         })
       }
-
-      await tx.order.update({
-        where: { id },
-        data: { status: 4, cancelledAt: new Date() }
-      })
     })
 
     return this.findOne(userId, id)
