@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException
 } from '@nestjs/common'
@@ -119,9 +120,14 @@ export class AdminRefundsService {
    *   1) 还原商品 stock + 减 sales
    *   2) 关联 UserCoupon 退回未使用 + 清空 orderId
    *   3) refund.status → 3
+   *
+   * 并发安全：状态转换校验在事务内通过条件 updateMany where: { id, status: 1 } 完成，
+   * 若 count !== 1（已被另一并发请求处理），抛 ConflictException 整笔回滚，
+   * 避免两次入库/两次退券。
    */
   async markRefunded(id: number, operatorId: number) {
     const r = await this.findOne(id)
+    // 事务外的预校验只用于给出更明确的错误信息；真正的并发保护见事务内 updateMany。
     this.assertTransition(r.status, 3)
 
     const order = await this.prisma.order.findUnique({
@@ -131,6 +137,16 @@ export class AdminRefundsService {
     if (!order) throw new NotFoundException('关联订单不存在')
 
     await this.prisma.$transaction(async (tx) => {
+      // 条件 update：只有 status=1 (已批准) 才允许转为 status=3 (已退款)。
+      // count !== 1 说明已被并发请求抢先处理，整笔回滚。
+      const updated = await tx.refundRequest.updateMany({
+        where: { id, status: 1 },
+        data: { status: 3 }
+      })
+      if (updated.count !== 1) {
+        throw new ConflictException('该退款申请状态已变更，请刷新后重试')
+      }
+
       for (const item of order.items) {
         const before = await tx.product.findUnique({
           where: { id: item.productId },
@@ -165,11 +181,6 @@ export class AdminRefundsService {
           }
         })
       }
-
-      await tx.refundRequest.update({
-        where: { id },
-        data: { status: 3 }
-      })
     })
 
     return this.findOne(id)
