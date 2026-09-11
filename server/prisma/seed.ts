@@ -283,6 +283,29 @@ async function main(): Promise<void> {
     auditCount++
   }
   console.log(`  -> inserted ${auditCount} audit logs`)
+    console.log('Seeding settings...')
+  const settings = [
+    { key: 'site_name', value: '我的小店', group: 'site', description: '站点名称（客户端首页展示）' },
+    { key: 'site_logo', value: 'https://picsum.photos/seed/logo/120/120', group: 'site', description: '站点 Logo URL' },
+    { key: 'site_description', value: '一家专注于生活好物的精选商城', group: 'site', description: '站点描述（SEO 用）' },
+    { key: 'icp', value: '', group: 'site', description: 'ICP 备案号' },
+    { key: 'customer_service_phone', value: '400-123-4567', group: 'customer_service', description: '客服电话' },
+    { key: 'customer_service_wechat', value: 'my_shop_cs', group: 'customer_service', description: '客服微信号' },
+    { key: 'working_hours', value: '9:00-21:00', group: 'customer_service', description: '客服工作时间' },
+    { key: 'payment_methods', value: ['wechat', 'alipay'], group: 'payment', description: '支持的支付方式' },
+    { key: 'min_order_amount', value: 0, group: 'payment', description: '起送金额（元）' },
+    { key: 'free_shipping_threshold', value: 99, group: 'shipping', description: '免运费门槛（元）' },
+    { key: 'default_shipping_fee', value: 10, group: 'shipping', description: '默认运费（元）' },
+    { key: 'supported_regions', value: ['中国大陆'], group: 'shipping', description: '支持的配送地区' }
+  ]
+  for (const s2 of settings) {
+    await prisma.setting.upsert({
+      where: { key: s2.key },
+      update: { value: s2.value as never, group: s2.group, description: s2.description },
+      create: s2
+    })
+  }
+  console.log(`  -> inserted/updated ${settings.length} settings`)
     const counts = {
     users: await prisma.user.count(),
     categories: await prisma.category.count(),
@@ -291,6 +314,7 @@ async function main(): Promise<void> {
     orders: await prisma.order.count(),
     reviews: reviewCount,
     auditLogs: auditCount,
+    settings: settings.length,
     roles: await prisma.role.count(),
     adminUsers: await prisma.adminUser.count()
   }

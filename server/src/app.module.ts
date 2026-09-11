@@ -21,6 +21,8 @@ import { AdminInventoryModule } from './admin-inventory/admin-inventory.module'
 import { InventoryModule } from './inventory/inventory.module'
 import { AuditModule } from './audit/audit.module'
 import { AdminAuditLogsModule } from './admin-audit-logs/admin-audit-logs.module'
+import { AdminSettingsModule } from './admin-settings/admin-settings.module'
+import { ClientSettingsModule } from './client-settings/client-settings.module'
 import { AuditInterceptor } from './audit/audit.interceptor'
 import { ClientBannersModule } from './client-banners/client-banners.module'
 import { ClientOrdersModule } from './client-orders/client-orders.module'
@@ -50,7 +52,9 @@ import { RefundsModule } from './refunds/refunds.module'
     InventoryModule,
     AuditModule,
     AdminAuditLogsModule,
+    AdminSettingsModule,
     ClientBannersModule,
+    ClientSettingsModule,
     ClientOrdersModule,
     CouponsModule,
     RefundsModule
