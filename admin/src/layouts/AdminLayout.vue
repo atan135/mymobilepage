@@ -7,6 +7,11 @@ import {
 } from 'element-plus'
 import {
   House,
+  User,
+  Menu,
+  Goods,
+  Picture,
+  Bell,
   SwitchButton,
   UserFilled
 } from '@element-plus/icons-vue'
@@ -25,9 +30,13 @@ const auth = useAdminAuthStore()
 
 const collapsed = ref(false)
 
-// Phase 1 第一版菜单（其它模块在后续迭代接入）
 const menuItems = computed<MenuItem[]>(() => [
-  { path: '/dashboard', title: '仪表盘', icon: 'House', permission: 'dashboard:view' }
+  { path: '/dashboard', title: '仪表盘', icon: 'House', permission: 'dashboard:view' },
+  { path: '/users', title: '用户管理', icon: 'User', permission: 'user:list' },
+  { path: '/categories', title: '分类管理', icon: 'Menu', permission: 'category:list' },
+  { path: '/products', title: '商品管理', icon: 'Goods', permission: 'product:list' },
+  { path: '/banners', title: '轮播图管理', icon: 'Picture', permission: 'banner:list' },
+  { path: '/announcements', title: '首页公告', icon: 'Bell', permission: 'announcement:list' }
 ])
 
 const breadcrumb = computed(() => {

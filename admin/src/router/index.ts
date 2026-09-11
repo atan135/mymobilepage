@@ -21,6 +21,36 @@ const routes: RouteRecordRaw[] = [
         name: 'dashboard',
         component: () => import('../views/DashboardView.vue'),
         meta: { title: '仪表盘', icon: 'House', permission: 'dashboard:view' }
+      },
+      {
+        path: 'users',
+        name: 'admin-users',
+        component: () => import('../views/UserListView.vue'),
+        meta: { title: '用户管理', icon: 'User', permission: 'user:list' }
+      },
+      {
+        path: 'categories',
+        name: 'admin-categories',
+        component: () => import('../views/CategoryListView.vue'),
+        meta: { title: '分类管理', icon: 'Menu', permission: 'category:list' }
+      },
+      {
+        path: 'products',
+        name: 'admin-products',
+        component: () => import('../views/ProductListView.vue'),
+        meta: { title: '商品管理', icon: 'Goods', permission: 'product:list' }
+      },
+      {
+        path: 'banners',
+        name: 'admin-banners',
+        component: () => import('../views/BannerListView.vue'),
+        meta: { title: '轮播图管理', icon: 'Picture', permission: 'banner:list' }
+      },
+      {
+        path: 'announcements',
+        name: 'admin-announcements',
+        component: () => import('../views/AnnouncementListView.vue'),
+        meta: { title: '首页公告', icon: 'Bell', permission: 'announcement:list' }
       }
     ]
   },
