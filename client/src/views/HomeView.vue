@@ -45,11 +45,24 @@ async function loadCategories() {
   categories.value = await listCategories()
 }
 
+// 翻页加载：手动维护 listLoading，确保转圈不会永久卡住。
+// 防并发：调用前若已在加载，直接返回。
 async function loadProducts() {
-  const res = await listProducts({ page: page.value, pageSize: 10 })
-  products.value.push(...res.list)
-  if (!res.hasMore) finished.value = true
-  else page.value += 1
+  if (listLoading.value) return
+  listLoading.value = true
+  try {
+    const res = await listProducts({ page: page.value, pageSize: 10 })
+    products.value.push(...res.list)
+    if (!res.hasMore) finished.value = true
+    else page.value += 1
+  } catch (e: unknown) {
+    // 失败直接 finished=true，避免 <van-list> 无限重试
+    finished.value = true
+    // eslint-disable-next-line no-console
+    console.error('加载商品失败', e)
+  } finally {
+    listLoading.value = false
+  }
 }
 
 async function onRefresh() {
@@ -63,6 +76,8 @@ async function onRefresh() {
 
 async function init() {
   await Promise.all([loadBanners(), loadCategories(), loadSettings()])
+  // 初始第一页由本函数直接拉取（<van-list> 在列表为空时不会自动 @load）；
+  // 后续翻页由 <van-list> 在用户滚动到底部时通过 @load 触发。
   await loadProducts()
 }
 
