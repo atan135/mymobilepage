@@ -90,6 +90,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '退款详情', requiresAuth: true }
   },
   {
+    path: '/review/create',
+    name: 'review-create',
+    component: () => import('../views/ReviewCreateView.vue'),
+    meta: { title: '发表评价', requiresAuth: true }
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/home'
   }

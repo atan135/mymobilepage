@@ -27,6 +27,7 @@ import { ClientBannersModule } from './client-banners/client-banners.module'
 import { ClientOrdersModule } from './client-orders/client-orders.module'
 import { CouponsModule } from './coupons/coupons.module'
 import { RefundsModule } from './refunds/refunds.module'
+import { ClientReviewsModule } from './client-reviews/client-reviews.module'
 
 @Module({
   imports: [
@@ -57,7 +58,8 @@ import { RefundsModule } from './refunds/refunds.module'
     ClientSettingsModule,
     ClientOrdersModule,
     CouponsModule,
-    RefundsModule
+    RefundsModule,
+    ClientReviewsModule
   ]
 })
 export class AppModule {}

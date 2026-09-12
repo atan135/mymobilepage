@@ -245,6 +245,7 @@ model Review {
   @@index([userId])
   @@index([status])
   @@index([orderId])
+  @@unique([orderId, productId], name: "uniq_review_per_order_product")
   @@map("reviews")
 }
 

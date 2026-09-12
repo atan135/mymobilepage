@@ -9,6 +9,7 @@ import {
   type OrderDetail
 } from '../api/order'
 import { createRefund } from '../api/refund'
+import { getCanReview, type CanReviewResponse } from '../api/review'
 import { errorMessage } from '../api/request'
 
 const route = useRoute()
@@ -16,6 +17,7 @@ const router = useRouter()
 const order = ref<OrderDetail | null>(null)
 const loading = ref(false)
 const acting = ref(false)
+const canReview = ref<CanReviewResponse | null>(null)
 
 const STATUS_LABELS: Record<number, string> = {
   0: '待付款',
@@ -50,6 +52,15 @@ async function load() {
   loading.value = true
   try {
     order.value = await getOrder(id)
+    if (order.value && order.value.status === 3) {
+      try {
+        canReview.value = await getCanReview(id)
+      } catch {
+        canReview.value = null
+      }
+    } else {
+      canReview.value = null
+    }
   } finally {
     loading.value = false
   }
@@ -145,6 +156,25 @@ async function submitRefund() {
   } finally {
     acting.value = false
   }
+}
+
+function itemCanReview(productId: number): boolean {
+  return (
+    canReview.value?.items.some(
+      (i) => i.productId === productId && i.canReview
+    ) ?? false
+  )
+}
+
+function goReview(item: { productId: number; productTitle: string }) {
+  if (!order.value) return
+  router.push({
+    name: 'review-create',
+    query: {
+      orderId: order.value.id,
+      productId: item.productId
+    }
+  })
 }
 
 function goRefundDetail() {
@@ -243,6 +273,16 @@ function goRefundDetail() {
         </van-cell-group>
 
         <div class="actions">
+          <van-button
+            v-for="it in order.items"
+            v-show="itemCanReview(it.productId)"
+            :key="`r-${it.id}`"
+            plain
+            type="primary"
+            @click="goReview(it)"
+          >
+            评价「{{ it.productTitle }}」
+          </van-button>
           <van-button
             v-if="canRefund"
             plain
