@@ -88,6 +88,7 @@ npm run build:{client,admin,server}
 | 7 | 主题色覆盖 | `admin/src/styles/main.css` 在 `:root` 显式声明 `--el-color-primary` 等品牌主色；`:root[data-theme="dark"]` 仅重写 `--app-*` 自有变量；Element Plus 暗色由其内置 `.dark` 类提供，无需重复声明 |
 | 8 | 客户端 mock 注释 | 已清理：`client/src/api/request.ts` 头部 mock 说明块 + 未使用的 `delay()` 导出已删除 |
 | 9 | 客户端登录页底部文案 | 已清理：client/src/views/LoginView.vue 的 .hint div + 对应 .hint CSS 样式已删除 |
+| 10 | 函数式弹窗白板 | Vant 函数 API（showToast / showConfirmDialog）不被 unplugin-vue-components 自动注入样式；main.ts 的全量 vant/lib/index.css 在 HMR 下偶尔丢失样式，导致弹窗容器表现成白板。在 client/src/main.ts 集中显式 import vant/es/toast/style/index、vant/es/dialog/style/index、vant/es/action-sheet/style/index 兜底，新增函数式 API 不用动 view |
 
 完整 FAQ：`docs/00-总览与入门/04-开发约定与常见问题.md`。
 
