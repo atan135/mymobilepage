@@ -135,10 +135,12 @@ export class AuditInterceptor implements NestInterceptor {
       user?: { sub?: number }
       body?: unknown
     }>()
+    const url = req.originalUrl ?? req.url
+    if (!url.startsWith('/api/admin')) return next.handle()
     const method = req.method
     if (!WRITE_METHODS.has(method)) return next.handle()
 
-    const parsed = parseUrl(req.originalUrl ?? req.url, method)
+    const parsed = parseUrl(url, method)
     const meta = { ...parsed, action: this.resolveAction(ctx, parsed.action) }
     const adminId = req.user?.sub ?? null
     const ip = pickIp(req)
