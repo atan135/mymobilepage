@@ -200,7 +200,7 @@ export class AdminCouponsService {
     return this.prisma.$transaction(async (tx) => {
       // 锁住 coupon 行，使同一 coupon 的并发 grant 串行化。
       const lockRows = await tx.$queryRaw<Array<{ id: number }>>(
-        Prisma.sql`SELECT id FROM "Coupon" WHERE id = ${couponId} FOR UPDATE`
+        Prisma.sql`SELECT id FROM "coupons" WHERE id = ${couponId} FOR UPDATE`
       )
       if (lockRows.length === 0) {
         throw new NotFoundException('优惠券不存在')
