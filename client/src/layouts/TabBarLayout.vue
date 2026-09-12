@@ -1,11 +1,20 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useCartStore } from '../stores/cart'
 
 const route = useRoute()
 const router = useRouter()
+const cart = useCartStore()
 
-const tabs = [
+interface Tab {
+  name: string
+  title: string
+  icon: string
+  badge?: number | string
+}
+
+const tabs: Tab[] = [
   { name: 'home', title: '首页', icon: 'home-o' },
   { name: 'category', title: '分类', icon: 'apps-o' },
   { name: 'cart', title: '购物车', icon: 'cart-o' },
@@ -16,6 +25,11 @@ const active = computed<string>(() => {
   const name = route.name?.toString() ?? ''
   return tabs.some((t) => t.name === name) ? name : 'home'
 })
+
+function badgeFor(name: string): number | string {
+  // 0 件时传空串触发 Badge 隐藏逻辑；其它 tab 不挂徽标。
+  return name === 'cart' ? cart.totalCount || '' : ''
+}
 
 function onChange(name: string | number) {
   if (typeof name === 'string') {
@@ -40,6 +54,7 @@ function onChange(name: string | number) {
         :key="t.name"
         :name="t.name"
         :icon="t.icon"
+        :badge="badgeFor(t.name)"
       >
         {{ t.title }}
       </van-tabbar-item>

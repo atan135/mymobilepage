@@ -95,7 +95,7 @@ function buyNow() {
 
       <van-action-bar safe-area-inset-bottom>
         <van-action-bar-icon icon="chat-o" text="客服" />
-        <van-action-bar-icon icon="cart-o" text="购物车" @click="router.push('/cart')" />
+        <van-action-bar-icon icon="cart-o" :badge="cart.totalCount || ''" text="购物车" @click="router.push('/cart')" />
         <van-action-bar-button type="warning" text="加入购物车" @click="addToCart" />
         <van-action-bar-button type="danger" text="立即购买" @click="buyNow" />
       </van-action-bar>
