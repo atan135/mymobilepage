@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   listAdminOrders,
   getAdminOrder,
@@ -33,6 +33,7 @@ const query = reactive({
 })
 
 const router = useRouter()
+const route = useRoute()
 
 function goRefund(id: number) {
   router.push({ name: 'admin-refund-detail', params: { id: String(id) } })
@@ -42,6 +43,19 @@ const tabs = [
   { label: '全部', value: undefined as OrderStatus | undefined },
   ...ORDER_STATUSES.map((s) => ({ label: ORDER_STATUS_LABELS[s], value: s }))
 ]
+
+/**
+ * el-tabs 的 modelValue 是 string，但 query.status 是 number/undefined。
+ * 这里用 computed 桥接，并兼顾 '全部' tab 的空串语义。
+ */
+const tabModel = computed<string>({
+  get: () => (query.status === undefined ? '' : String(query.status)),
+  set: (v) => {
+    query.status = v === '' ? undefined : (Number(v) as OrderStatus)
+    query.page = 1
+    load()
+  }
+})
 
 async function load() {
   loading.value = true
@@ -54,7 +68,24 @@ async function load() {
   }
 }
 
-onMounted(load)
+onMounted(async () => {
+  const q = route.query
+  const statusStr = typeof q.status === 'string' ? q.status : ''
+  if (statusStr && !Number.isNaN(Number(statusStr))) {
+    query.status = Number(statusStr) as OrderStatus
+  }
+  await load()
+  const focusStr = typeof q.focus === 'string' ? q.focus : ''
+  if (focusStr && /^\d+$/.test(focusStr)) {
+    detailVisible.value = true
+    detailLoading.value = true
+    try {
+      detail.value = await getAdminOrder(Number(focusStr))
+    } finally {
+      detailLoading.value = false
+    }
+  }
+})
 
 function onTabChange() {
   query.page = 1
@@ -194,15 +225,14 @@ function asOrder(row: unknown): OrderListItem {
   <div class="page">
     <el-card>
       <el-tabs
-        v-model="query.status"
-        @tab-change="onTabChange"
+        v-model="tabModel"
         class="tabs"
       >
         <el-tab-pane
           v-for="t in tabs"
-          :key="String(t.value)"
+          :key="String(t.value ?? '')"
           :label="t.label"
-          :name="String(t.value)"
+          :name="String(t.value ?? '')"
         />
       </el-tabs>
 

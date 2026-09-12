@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
   listAdminRefunds,
@@ -12,6 +12,7 @@ import {
 } from '../api/admin-refunds'
 
 const router = useRouter()
+const route = useRoute()
 const loading = ref(false)
 const list = ref<AdminRefundListItem[]>([])
 const total = ref(0)
@@ -44,7 +45,14 @@ async function load() {
   }
 }
 
-onMounted(load)
+onMounted(async () => {
+  const q = route.query
+  const statusStr = typeof q.status === 'string' ? q.status : ''
+  if (statusStr && !Number.isNaN(Number(statusStr))) {
+    query.status = Number(statusStr) as RefundStatus
+  }
+  await load()
+})
 
 function onTabChange() {
   query.page = 1

@@ -15,6 +15,8 @@ import {
   getDashboardOverview,
   getSalesTrend,
   type DashboardOverview,
+  type DashboardPendingItem,
+  type DashboardPendingItemType,
   type SalesTrendPoint
 } from '../api/admin-dashboard'
 
@@ -101,12 +103,51 @@ onUnmounted(() => {
   chart.value = null
 })
 
-function goOrders() {
-  router.push('/orders')
+type PendingKey = 'ship' | 'review' | 'pay'
+
+function goPending(key: PendingKey) {
+  if (key === 'ship') {
+    router.push({ name: 'admin-orders', query: { status: 1 } })
+  } else if (key === 'review') {
+    router.push({ name: 'admin-refunds', query: { status: 0 } })
+  } else {
+    router.push({ name: 'admin-refunds', query: { status: 1 } })
+  }
 }
 
 function goInventory() {
   router.push('/inventory/warnings')
+}
+
+function goPendingItem(item: DashboardPendingItem) {
+  if (item.type === 'order') {
+    router.push({
+      name: 'admin-orders',
+      query: { focus: item.refId, status: 1 }
+    })
+  } else {
+    router.push({
+      name: 'admin-refund-detail',
+      params: { id: String(item.refId) }
+    })
+  }
+}
+
+const PENDING_TYPE_LABEL: Record<DashboardPendingItemType, string> = {
+  order: '待发货',
+  refund: '退款'
+}
+
+const PENDING_TYPE_TAG: Record<
+  DashboardPendingItemType,
+  'success' | 'warning' | 'danger' | 'info'
+> = {
+  order: 'warning',
+  refund: 'danger'
+}
+
+function asItem(row: unknown): DashboardPendingItem {
+  return row as DashboardPendingItem
 }
 </script>
 
@@ -122,36 +163,61 @@ function goInventory() {
     </el-card>
 
     <el-row :gutter="16" class="kpis">
-      <el-col :span="6">
+      <el-col :span="8">
         <el-card>
           <div class="kpi-label">今日订单</div>
           <div class="kpi-value">{{ data?.todayOrders ?? '--' }}</div>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :span="8">
         <el-card>
           <div class="kpi-label">今日 GMV</div>
           <div class="kpi-value">¥{{ (data?.todayGmv ?? 0).toFixed(2) }}</div>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :span="8">
         <el-card>
           <div class="kpi-label">注册用户</div>
           <div class="kpi-value">{{ data?.totalUsers ?? '--' }}</div>
         </el-card>
       </el-col>
-      <el-col :span="6">
-        <el-card class="kpi-clickable" @click="goOrders">
-          <div class="kpi-label">待处理订单</div>
-          <div class="kpi-value danger">{{ data?.pendingOrders ?? '--' }}</div>
-          <div class="kpi-hint">点击进入订单列表 →</div>
+    </el-row>
+
+    <el-row :gutter="16" class="kpis">
+      <el-col :span="8">
+        <el-card class="kpi-clickable" @click="goPending('ship')">
+          <div class="kpi-label">待发货订单</div>
+          <div
+            class="kpi-value"
+            :class="{ danger: (data?.pendingShipOrders ?? 0) > 0 }"
+          >
+            {{ data?.pendingShipOrders ?? '--' }}
+          </div>
+          <div class="kpi-hint">点击进入待发货列表 →</div>
         </el-card>
       </el-col>
-      <el-col :span="6">
-        <el-card class="kpi-clickable" @click="goInventory">
-          <div class="kpi-label">库存预警</div>
-          <div class="kpi-value" :class="{ warning: (data?.lowStockCount ?? 0) > 0 }">{{ data?.lowStockCount ?? '--' }}</div>
-          <div class="kpi-hint">点击查看预警商品 →</div>
+      <el-col :span="8">
+        <el-card class="kpi-clickable" @click="goPending('review')">
+          <div class="kpi-label">待审退款</div>
+          <div
+            class="kpi-value"
+            :class="{ danger: (data?.pendingRefundReviews ?? 0) > 0 }"
+          >
+            {{ data?.pendingRefundReviews ?? '--' }}
+          </div>
+          <div class="kpi-hint">点击进入退款审批 →</div>
+        </el-card>
+      </el-col>
+      <el-col :span="8">
+        <el-card class="kpi-clickable" @click="goPending('pay')">
+          <div class="kpi-label">待打款</div>
+          <div
+            class="kpi-value"
+            :class="{ danger: (data?.pendingRefunds ?? 0) > 0 }"
+          >
+            {{ data?.pendingRefunds ?? '--' }}
+          </div>
+          <div class="kpi-hint">点击进入退款审批 →</div>
         </el-card>
       </el-col>
     </el-row>
@@ -165,10 +231,19 @@ function goInventory() {
               <el-link type="primary" :underline="false" @click="goInventory">查看全部 →</el-link>
             </div>
           </template>
-          <el-table v-if="data?.lowStockProducts?.length" :data="data.lowStockProducts" size="small" stripe>
+          <el-table
+            v-if="data?.lowStockProducts?.length"
+            :data="data.lowStockProducts"
+            size="small"
+            stripe
+          >
             <el-table-column label="封面" width="60">
               <template #default="{ row }">
-                <el-image :src="row.cover" style="width: 36px; height: 36px; border-radius: 4px" fit="cover" />
+                <el-image
+                  :src="row.cover"
+                  style="width: 36px; height: 36px; border-radius: 4px"
+                  fit="cover"
+                />
               </template>
             </el-table-column>
             <el-table-column label="商品" min-width="160" show-overflow-tooltip>
@@ -202,22 +277,32 @@ function goInventory() {
         <el-card>
           <template #header>
             <div class="card-header">
-              <span>待处理订单</span>
-              <el-link type="primary" :underline="false" @click="goOrders">查看全部 →</el-link>
+              <span>运营待办 Top5</span>
+              <span class="muted">发货 / 退款审批 / 打款</span>
             </div>
           </template>
-          <el-table v-if="data?.pendingOrderList?.length" :data="data.pendingOrderList" size="small" stripe>
-            <el-table-column prop="orderNo" label="订单号" min-width="140" show-overflow-tooltip />
-            <el-table-column label="用户" min-width="80">
+          <el-table
+            v-if="data?.pendingItems?.length"
+            :data="data.pendingItems"
+            size="small"
+            stripe
+            @row-click="goPendingItem"
+          >
+            <el-table-column label="类型" width="70">
               <template #default="{ row }">
-                {{ row.user.nickname ?? row.user.username }}
+                <el-tag :type="PENDING_TYPE_TAG[asItem(row).type]" size="small">
+                  {{ PENDING_TYPE_LABEL[asItem(row).type] }}
+                </el-tag>
               </template>
             </el-table-column>
+            <el-table-column label="订单号 / 退款 ID" min-width="140" show-overflow-tooltip>
+              <template #default="{ row }">{{ asItem(row).title }}</template>
+            </el-table-column>
             <el-table-column label="金额" width="80">
-              <template #default="{ row }">¥{{ Number(row.totalAmount).toFixed(2) }}</template>
+              <template #default="{ row }">¥{{ Number(asItem(row).amount).toFixed(2) }}</template>
             </el-table-column>
           </el-table>
-          <el-empty v-else description="暂无待处理订单" :image-size="60" />
+          <el-empty v-else description="暂无运营待办" :image-size="60" />
         </el-card>
       </el-col>
     </el-row>
@@ -226,7 +311,12 @@ function goInventory() {
       <template #header>
         <span>热销商品 Top 10</span>
       </template>
-      <el-table v-if="data?.topProducts?.length" :data="data.topProducts" stripe size="small">
+      <el-table
+        v-if="data?.topProducts?.length"
+        :data="data.topProducts"
+        stripe
+        size="small"
+      >
         <el-table-column label="排名" width="60" type="index" />
         <el-table-column label="封面" width="80">
           <template #default="{ row }">

@@ -8,12 +8,17 @@ export interface DashboardTopProduct {
   gmv: number
 }
 
-export interface DashboardPendingOrder {
+export type DashboardPendingItemType = 'order' | 'refund'
+
+export interface DashboardPendingItem {
+  type: DashboardPendingItemType
   id: number
-  orderNo: string
-  totalAmount: number
+  refId: number
+  title: string
+  subtitle: string
+  amount: number
   createdAt: string
-  user: { username: string; nickname: string | null }
+  status: number
 }
 
 export interface DashboardLowStockProduct {
@@ -28,9 +33,11 @@ export interface DashboardOverview {
   todayOrders: number
   todayGmv: number
   totalUsers: number
-  pendingOrders: number
+  pendingShipOrders: number
+  pendingRefundReviews: number
+  pendingRefunds: number
   topProducts: DashboardTopProduct[]
-  pendingOrderList: DashboardPendingOrder[]
+  pendingItems: DashboardPendingItem[]
   lowStockCount: number
   lowStockProducts: DashboardLowStockProduct[]
 }

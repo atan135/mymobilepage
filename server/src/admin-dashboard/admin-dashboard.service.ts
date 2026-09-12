@@ -2,11 +2,26 @@ import { Injectable } from '@nestjs/common'
 import { Prisma } from '@prisma/client'
 import { PrismaService } from '../prisma/prisma.service'
 
+export type DashboardPendingItemType = 'order' | 'refund'
+
+export interface DashboardPendingItem {
+  type: DashboardPendingItemType
+  id: number
+  refId: number
+  title: string
+  subtitle: string
+  amount: number
+  createdAt: Date
+  status: number
+}
+
 export interface DashboardOverview {
   todayOrders: number
   todayGmv: number
   totalUsers: number
-  pendingOrders: number
+  pendingShipOrders: number
+  pendingRefundReviews: number
+  pendingRefunds: number
   topProducts: Array<{
     productId: number
     title: string
@@ -14,13 +29,7 @@ export interface DashboardOverview {
     sales: number
     gmv: number
   }>
-  pendingOrderList: Array<{
-    id: number
-    orderNo: string
-    totalAmount: number
-    createdAt: Date
-    user: { username: string; nickname: string | null }
-  }>
+  pendingItems: DashboardPendingItem[]
   lowStockCount: number
   lowStockProducts: Array<{
     id: number
@@ -42,31 +51,63 @@ export class AdminDashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
   async overview(): Promise<DashboardOverview> {
-    // 预警聚合：status=1 上架商品的 stock<=threshold
     const startOfToday = this.startOfDay(new Date())
 
-    const [todayOrderCount, todayGmvAgg, totalUsers, pendingOrders, topRows] =
-      await this.prisma.$transaction([
-        this.prisma.order.count({ where: { createdAt: { gte: startOfToday } } }),
-        this.prisma.order.aggregate({
-          _sum: { totalAmount: true },
-          where: {
-            createdAt: { gte: startOfToday },
-            status: { in: [1, 2, 3] }
+    const [
+      todayOrderCount,
+      todayGmvAgg,
+      totalUsers,
+      pendingShipOrders,
+      pendingRefundReviews,
+      pendingRefunds,
+      topRows,
+      shipOrderRows,
+      refundRows
+    ] = await this.prisma.$transaction([
+      this.prisma.order.count({ where: { createdAt: { gte: startOfToday } } }),
+      this.prisma.order.aggregate({
+        _sum: { totalAmount: true },
+        where: {
+          createdAt: { gte: startOfToday },
+          status: { in: [1, 2, 3] }
+        }
+      }),
+      this.prisma.user.count(),
+      this.prisma.order.count({ where: { status: 1 } }),
+      this.prisma.refundRequest.count({ where: { status: 0 } }),
+      this.prisma.refundRequest.count({ where: { status: 1 } }),
+      this.prisma.orderItem.groupBy({
+        by: ['productId', 'productTitle', 'productCover'],
+        _sum: { quantity: true, price: true },
+        where: {
+          order: { status: { in: [1, 2, 3] } }
+        },
+        orderBy: { _sum: { quantity: 'desc' } },
+        take: 10
+      }),
+      this.prisma.order.findMany({
+        where: { status: 1 },
+        orderBy: [{ id: 'desc' }],
+        take: 5,
+        include: {
+          user: { select: { username: true, nickname: true } }
+        }
+      }),
+      this.prisma.refundRequest.findMany({
+        where: { status: { in: [0, 1] } },
+        orderBy: [{ id: 'desc' }],
+        take: 5,
+        include: {
+          order: {
+            select: {
+              id: true,
+              orderNo: true,
+              user: { select: { username: true, nickname: true } }
+            }
           }
-        }),
-        this.prisma.user.count(),
-        this.prisma.order.count({ where: { status: 0 } }),
-        this.prisma.orderItem.groupBy({
-          by: ['productId', 'productTitle', 'productCover'],
-          _sum: { quantity: true, price: true },
-          where: {
-            order: { status: { in: [1, 2, 3] } }
-          },
-          orderBy: { _sum: { quantity: 'desc' } },
-          take: 10
-        })
-      ])
+        }
+      })
+    ])
 
     const topProducts = topRows.map((row) => {
       const sum = row._sum ?? { quantity: 0, price: new Prisma.Decimal(0) }
@@ -81,24 +122,40 @@ export class AdminDashboardService {
       }
     })
 
-    const pendingOrderList = (
-      await this.prisma.order.findMany({
-        where: { status: 0 },
-        orderBy: [{ id: 'desc' }],
-        take: 5,
-        include: {
-          user: { select: { username: true, nickname: true } }
-        }
-      })
-    ).map((o) => ({
-      id: o.id,
-      orderNo: o.orderNo,
-      totalAmount: Number(o.totalAmount),
-      createdAt: o.createdAt,
-      user: { username: o.user.username, nickname: o.user.nickname }
-    }))
+    // 混合待办：订单 (status=1 待发货) + 退款 (status=0 待审 / status=1 已批准)
+    // 业务优先级：发货优先于退款；同类型内按 id desc。
+    const merged: DashboardPendingItem[] = [
+      ...shipOrderRows.map((o) => ({
+        type: 'order' as const,
+        id: o.id,
+        refId: o.id,
+        title: o.orderNo,
+        subtitle: o.user.nickname ?? o.user.username,
+        amount: Number(o.totalAmount),
+        createdAt: o.createdAt,
+        status: 1
+      })),
+      ...refundRows.map((r) => ({
+        type: 'refund' as const,
+        id: r.id,
+        refId: r.id,
+        title: r.order ? r.order.orderNo : `#${r.orderId}`,
+        subtitle: r.order?.user
+          ? (r.order.user.nickname ?? r.order.user.username)
+          : '-',
+        amount: Number(r.amount),
+        createdAt: r.createdAt,
+        status: r.status
+      }))
+    ]
+    merged.sort((a, b) => {
+      const pa = a.type === 'order' ? 0 : 1
+      const pb = b.type === 'order' ? 0 : 1
+      if (pa !== pb) return pa - pb
+      return b.id - a.id
+    })
+    const pendingItems = merged.slice(0, 5)
 
-    // 低库存：单独查询（与上面 transaction 并行后做）
     const onShelf = await this.prisma.product.findMany({
       where: { status: 1 },
       select: { id: true, title: true, cover: true, stock: true, threshold: true }
@@ -117,9 +174,11 @@ export class AdminDashboardService {
       todayOrders: todayOrderCount,
       todayGmv: Number((todayGmvAgg._sum.totalAmount ?? 0).toFixed(2)),
       totalUsers,
-      pendingOrders,
+      pendingShipOrders,
+      pendingRefundReviews,
+      pendingRefunds,
       topProducts,
-      pendingOrderList,
+      pendingItems,
       lowStockCount: lowStockAll.length,
       lowStockProducts
     }
