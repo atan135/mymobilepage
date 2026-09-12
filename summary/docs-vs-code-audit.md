@@ -22,7 +22,7 @@
 
 **已修复条目**：H1-H17、M1-M14、L1-L11 全部 42 条 + 附录 A 1 条 = **共 43 条**。
 
-剩余：**附录 B** 中提到的"延后项"（如 User.status 字段补 schema、ECharts 销售趋势切换控件等）非紧急，可在后续 Phase 3 跟进。
+剩余：**附录 B** 中提到的"延后项"——仅 ECharts 销售趋势切换控件为 UI 占位、非紧急，可在后续 Phase 3 跟进；User.status 字段补 schema 已在「修复进度（续）」闭环（见下）。
 
 修复顺序按"强烈推荐先修 10 条"权重从高到低：
 
@@ -37,13 +37,30 @@
 | 7 | H14 `/order/success?orderNo` -> `?id` | docs(client) | 改 02/04/05 三处 |
 | 8 | M10/M11 部署 env + Prisma | docs(deploy) | 补 3 个 env + prisma:deploy 命令 |
 | 9 | H6/M14/M12/L1 中间件/迁移/seed | docs(server) | AuditInterceptor 状态 + 迁移表 + seed 步骤 |
-| 10 | L2 admin-users User.status | fix(server) | 移除 where.status 字段过滤 |
+| 10 | L2 admin-users User.status | fix(server) | 移除 where.status 字段过滤（应急） |
 | + | 附录 A AdminExportsModule 未挂载 | fix(server) | 注册到 app.module.ts imports |
 
 每条修复均按 AGENTS.md"一事一提交"原则拆为独立 commit：
 - 代码 commit：fix(admin/client/server)
 - 文档 commit：docs(server/admin/client/deploy) 或 docs(AGENTS.md)
 - summary commit：docs(summary)
+
+### 修复进度（续）— User.status 完整闭环
+
+之前 L2「admin-users User.status」只是把 `where.status` 过滤临时移除避免 Prisma 抛 `Unknown argument`，
+schema 缺口未补；附录 B 中标注为「Phase 3 跟进」的 `User.status` 字段补 schema 项在本次一并闭环：
+
+| commit | 内容 |
+| --- | --- |
+| `97495dc` `feat(server): users 表加 status 字段 + 重新启用 AdminUsersService 过滤` | `schema.prisma` User 加 `status Int @default(1)`；新增迁移 `20260912000322_phase2_add_user_status/`（`ALTER TABLE users ADD COLUMN status INTEGER NOT NULL DEFAULT 1`）；`AdminUsersService.list` 恢复 `where.status` 过滤分支 |
+| `4acfe4e` `docs(server): 同步 User.status 字段（Schema + 迁移表 + 用户管理边界）` | `docs/10-服务端/03-数据库Schema说明.md` §3 users 字段表 + ER 图 + 迁移历史表；`docs/10-服务端/06-数据迁移与Seed脚本.md` §2 迁移表；`docs/20-管理后台/04-用户管理.md` §8 边界说明更新 |
+| `937df9d` `docs: AGENTS.md §7 坑位 #3 标记为已修` | AGENTS.md §7 已知坑位 #3 同步为已落地，仅 `AuthService.login` 禁用态校验标记为后续生产化阶段 |
+
+**最终态**：
+
+- 已修复条目：H1-H17、M1-M14、L1-L11 全部 42 条 + 附录 A 1 条 + 附录 B-E（User.status schema 闭环）1 条 = **共 44 条**
+- 附录 B 剩余事项：A 整体方案 / B 任务卡拆分 / C 单类优先 / D AdminExportsService 内部复核 — 均属流程或后续优化项，非具体 bug 修复，不再单列 commit
+- 未完成项：仅 `server/src/auth/auth.service.ts` 暂未加 `user.status !== 1` 的登录拦截（不影响数据正确性，仅未阻断禁用用户登录），属于生产化阶段事项
 
 ---
 
@@ -907,7 +924,7 @@ export class AdminExportsModule {}
 - [ ] **B**：针对每条 High 出具 `summary/docs-vs-code-audit-followup-X.md` 任务卡，分派给不同 subagent
 - [ ] **C**：只挑一类先修（如先清"Phase 2 完成态"那一片，或先修"AGENTS.md §7 自点名未清"的 2 条）
 - [ ] **D**：把 `AdminExportsModule` 挂载 + 复核 `AdminExportsService` 实现（与 12-数据导出.md 同步验证）
-- [ ] **E**：把 `admin-users.service.ts` `User.status` 引用改成不引用该字段（避免前端筛选抛 Prisma 错误）
+- [x] **E**（已完成）：把 `admin-users.service.ts` `User.status` 引用改成不引用该字段 — 应急方案为 commit `39a7306` 移除过滤；完整闭环为 commit `97495dc` 加回 schema 字段 + 重新启用过滤（commit `4acfe4e` + `937df9d` 同步文档）
 
 ---
 
