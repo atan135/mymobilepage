@@ -12,7 +12,7 @@
 | 管理后台 | `admin/` | 5174 | Vue 3.5 + Element Plus + Pinia + ECharts |
 | 服务端 | `server/` | 3000 | NestJS 12 + Prisma 6 + PostgreSQL |
 
-当前阶段：Phase 1 + Phase 2 全部完成（详见 `summary/admin-roadmap.md`）；Phase 2 模块位置已预留。
+当前阶段：Phase 1 + Phase 2 全部完成（详见 `summary/admin-roadmap.md`）。
 
 ## 2. 完整文档入口（必读）
 
@@ -127,5 +127,5 @@ npm run build:{client,admin,server}
 - 服务端权限码完整列表：`docs/10-服务端/04-认证与权限体系.md` 第 5 节
 - 后台路由菜单权限对应：`docs/20-管理后台/02-账号权限与登录.md`
 - 默认账号清单：`docs/10-服务端/06-数据迁移与Seed脚本.md` 第 4 节
-- Phase 1 整体完成态：`summary/admin-roadmap.md`
+- Phase 1 + Phase 2 整体完成态：`summary/admin-roadmap.md`
 
