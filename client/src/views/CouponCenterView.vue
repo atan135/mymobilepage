@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import 'vant/es/toast/index.css'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { showToast } from 'vant'
 import {
