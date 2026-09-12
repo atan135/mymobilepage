@@ -152,7 +152,10 @@ function goRefundDetail() {
   <div class="detail">
     <van-nav-bar title="订单详情" left-arrow fixed @click-left="router.back()" />
 
-    <div class="content" v-loading="loading">
+    <div class="content">
+      <div v-if="loading" class="loading-mask">
+        <van-loading size="24">加载中...</van-loading>
+      </div>
       <template v-if="order">
         <van-cell-group inset>
           <van-cell>
@@ -301,7 +304,17 @@ function goRefundDetail() {
 
 <style scoped>
 .detail { min-height: 100vh; background: #f7f8fa; }
-.content { padding: 46px 0 32px; }
+.content { padding: 46px 0 32px; position: relative; }
+.loading-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(247, 248, 250, 0.85);
+}
+
 .orderno { margin-left: 12px; font-size: 13px; color: #606266; }
 .block { margin-top: 12px; }
 .actions {

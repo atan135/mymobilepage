@@ -49,7 +49,10 @@ function statusType(s: number): 'success' | 'default' | 'warning' | 'primary' {
   <div class="page">
     <van-nav-bar title="退款详情" left-arrow fixed @click-left="router.back()" />
 
-    <div class="content" v-loading="loading">
+    <div class="content">
+      <div v-if="loading" class="loading-mask">
+        <van-loading size="24">加载中...</van-loading>
+      </div>
       <template v-if="detail">
         <van-cell-group inset>
           <van-cell>
@@ -114,7 +117,17 @@ function statusType(s: number): 'success' | 'default' | 'warning' | 'primary' {
 
 <style scoped>
 .page { min-height: 100vh; background: #f7f8fa; }
-.content { padding: 46px 0 24px; }
+.content { padding: 46px 0 24px; position: relative; }
+.loading-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(247, 248, 250, 0.85);
+}
+
 .label { margin-left: 8px; font-size: 13px; color: #606266; }
 .amount { color: #ee0a24; font-weight: 700; font-size: 18px; }
 .block { margin-top: 12px; }
