@@ -57,6 +57,9 @@ async function main(): Promise<void> {
   await prisma.announcement.deleteMany()
   await prisma.banner.deleteMany()
   await prisma.review.deleteMany()
+  await prisma.inventoryLog.deleteMany()
+  await prisma.userCoupon.deleteMany()
+  await prisma.coupon.deleteMany()
   await prisma.product.deleteMany()
   await prisma.category.deleteMany()
 
@@ -113,9 +116,69 @@ async function main(): Promise<void> {
     ]
   })
 
-  console.log('Seeding orders (10 spread across statuses + dates)...')
   const now = Date.now()
   const day = 24 * 60 * 60 * 1000
+
+  console.log('Seeding coupons (3 张: 无门槛/满减/折扣, status=1, 30 天内有效)...')
+  const validFrom = new Date(now - 7 * day)
+  const validTo = new Date(now + 30 * day)
+  const couponSeeds = [
+    {
+      id: 101,
+      name: '新人立减券',
+      type: 3,
+      threshold: null,
+      amount: 10,
+      description: '新人专享，下单立减 10 元',
+      validFrom,
+      validTo,
+      total: 100,
+      perUserLimit: 1,
+      status: 1
+    },
+    {
+      id: 102,
+      name: '满 99 减 20',
+      type: 1,
+      threshold: 99,
+      amount: 20,
+      description: '满 99 元可用，立减 20 元',
+      validFrom,
+      validTo,
+      total: 200,
+      perUserLimit: 2,
+      status: 1
+    },
+    {
+      id: 103,
+      name: '满 200 打 85 折',
+      type: 2,
+      threshold: 200,
+      amount: 85,
+      description: '满 200 元享 85 折优惠',
+      validFrom,
+      validTo,
+      total: 50,
+      perUserLimit: 1,
+      status: 1
+    }
+  ]
+  await prisma.coupon.createMany({ data: couponSeeds })
+  console.log(`  -> inserted ${couponSeeds.length} coupons`)
+
+  console.log('Seeding user_coupons (alice/bob/carol 领 101 + alice 已用 102 + dave 已过期 102)...')
+  await prisma.userCoupon.createMany({
+    data: [
+      { userId: createdUsers[0].id, couponId: 101, status: 0, source: 1, expiresAt: validTo },
+      { userId: createdUsers[1].id, couponId: 101, status: 0, source: 1, expiresAt: validTo },
+      { userId: createdUsers[2].id, couponId: 101, status: 0, source: 1, expiresAt: validTo },
+      { userId: createdUsers[0].id, couponId: 102, status: 1, source: 0, usedAt: new Date(now - 2 * day), expiresAt: validTo },
+      { userId: createdUsers[3].id, couponId: 102, status: 0, source: 0, expiresAt: new Date(now - 1 * day) }
+    ]
+  })
+  console.log('  -> inserted 5 user_coupons')
+
+  console.log('Seeding orders (10 spread across statuses + dates)...')
   const orderTemplates = [
     { dAgo: 0, status: 1, qty: 2, items: [0, 3] }, // 今日 已付款
     { dAgo: 0, status: 2, qty: 1, items: [1] },    // 今日 已发货
@@ -259,7 +322,7 @@ async function main(): Promise<void> {
     { minutesAgo: 5, adminId: adminSuper.id, action: 'login', resource: 'auth', resourceId: null, payload: { username: 'admin' }, ip: '127.0.0.1' },
     { minutesAgo: 7, adminId: adminOperator.id, action: 'login', resource: 'auth', resourceId: null, payload: { username: 'operator' }, ip: '127.0.0.1' },
     { minutesAgo: 12, adminId: adminOperator.id, action: 'create', resource: 'coupons', resourceId: 101, payload: { name: '新人立减券', type: 3, amount: 10 }, ip: '127.0.0.1' },
-    { minutesAgo: 18, adminId: adminOperator.id, action: 'update', resource: 'coupons', resourceId: 101, payload: { status: 0 }, ip: '127.0.0.1' },
+    { minutesAgo: 18, adminId: adminOperator.id, action: 'update', resource: 'coupons', resourceId: 101, payload: { description: '新人专享，下单立减 10 元' }, ip: '127.0.0.1' },
     { minutesAgo: 25, adminId: adminOperator.id, action: 'create', resource: 'banners', resourceId: 5, payload: { image: 'https://picsum.photos/seed/banner-x/750/300', link: '/home' }, ip: '127.0.0.1' },
     { minutesAgo: 30, adminId: adminSuper.id, action: 'update', resource: 'products', resourceId: 110, payload: { stock: 80 }, ip: '127.0.0.1' },
     { minutesAgo: 42, adminId: adminOperator.id, action: 'approve', resource: 'refunds', resourceId: 1, payload: null, ip: '127.0.0.1' },
@@ -317,6 +380,8 @@ async function main(): Promise<void> {
     products: await prisma.product.count(),
     banners: await prisma.banner.count(),
     orders: await prisma.order.count(),
+    coupons: couponSeeds.length,
+    userCoupons: 5,
     reviews: reviewCount,
     auditLogs: auditCount,
     settings: settings.length,
