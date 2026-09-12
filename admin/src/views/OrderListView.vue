@@ -204,7 +204,7 @@ function asOrder(row: unknown): OrderListItem {
         <el-form-item label="搜索">
           <el-input
             v-model="query.keyword"
-            placeholder="订单号 / 用户名"
+            placeholder="订单 ID（纯数字）/ 用户名"
             clearable
             style="width: 220px"
             @keyup.enter="onSearch"
@@ -453,7 +453,7 @@ function asOrder(row: unknown): OrderListItem {
           </el-select>
         </el-form-item>
         <el-form-item label="关键字">
-          <el-input v-model="exportForm.keyword" placeholder="订单号 / 用户名" clearable />
+          <el-input v-model="exportForm.keyword" placeholder="订单 ID（纯数字）/ 用户名" clearable />
         </el-form-item>
         <el-form-item label="日期范围">
           <el-date-picker
