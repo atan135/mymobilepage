@@ -57,6 +57,14 @@ export class AuthService {
     return this.issueToken(user)
   }
 
+  /**
+   * 退出登录：JWT 是无状态的，这里只是占位。前端拿到 200 后清掉 token / user 即可。
+   * 保留端点是为了与 `AdminAuthModule.logout` 对齐，并预留未来加 token 黑名单的扩展点。
+   */
+  async logout(): Promise<void> {
+    return
+  }
+
   private async issueToken(user: {
     id: number
     username: string
