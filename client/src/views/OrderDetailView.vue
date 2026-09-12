@@ -208,6 +208,27 @@ function goRefundDetail() {
   if (!order.value?.refund) return
   router.push({ name: 'refund-detail', query: { id: order.value.refund.id } })
 }
+async function copyOrderNo() {
+  if (!order.value) return
+  const text = order.value.orderNo
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+    } else {
+      const ta = document.createElement('textarea')
+      ta.value = text
+      ta.style.position = 'fixed'
+      ta.style.left = '-9999px'
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      document.body.removeChild(ta)
+    }
+    showToast('订单号已复制')
+  } catch {
+    showToast('复制失败，请手动选择')
+  }
+}
 </script>
 
 <template>
@@ -225,7 +246,7 @@ function goRefundDetail() {
               <van-tag :type="STATUS_TAG_TYPE[order.status]">
                 {{ STATUS_LABELS[order.status] }}
               </van-tag>
-              <span class="orderno">订单号：{{ order.orderNo }}</span>
+              <span class="orderno">订单号：{{ order.orderNo }}</span><button type="button" class="copy-btn" @click="copyOrderNo">复制</button>
             </template>
             <template #label>
               下单时间：{{ new Date(order.createdAt).toLocaleString() }}
@@ -233,13 +254,11 @@ function goRefundDetail() {
           </van-cell>
         </van-cell-group>
 
-        <van-cell-group inset title="收货信息" class="block">
+        <van-cell-group inset title="收货信息" class="block tight">
           <van-cell title="收货人" :value="order.receiver.name" />
           <van-cell title="手机号" :value="order.receiver.phone" />
           <van-cell title="详细地址" :value="order.receiver.address" />
-        </van-cell-group>
-
-        <van-cell-group inset title="商品列表" class="block">
+        </van-cell-group><van-cell-group inset title="商品列表" class="block">
           <template v-for="it in order.items" :key="it.id">
             <van-card
               :title="it.productTitle"
@@ -273,7 +292,7 @@ function goRefundDetail() {
           </template>
         </van-cell-group>
 
-        <van-cell-group inset title="支付 / 物流" class="block">
+        <van-cell-group inset title="支付 / 物流" class="block tight">
           <van-cell title="订单总额" :value="`¥${Number(order.totalAmount).toFixed(2)}`" />
           <van-cell
             v-if="order.coupon"
@@ -305,9 +324,7 @@ function goRefundDetail() {
             title="物流"
             :value="`${order.shipCompany} · ${order.shipNo}`"
           />
-        </van-cell-group>
-
-        <van-cell-group v-if="order.remark" inset title="买家留言" class="block">
+        </van-cell-group><van-cell-group v-if="order.remark" inset title="买家留言" class="block">
           <van-cell :value="order.remark" />
         </van-cell-group>
 
@@ -412,6 +429,35 @@ function goRefundDetail() {
 
 .orderno { margin-left: 12px; font-size: 13px; color: #606266; }
 .block { margin-top: 12px; }
+
+/* 复制订单号按钮 */
+.copy-btn {
+  margin-left: auto;
+  padding: 1px 10px;
+  font-size: 12px;
+  color: #1989fa;
+  background: #e8f3ff;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  line-height: 1.5;
+}
+.copy-btn:active { background: #d6e8ff; }
+
+/* 紧凑行间距：仅作用于 .tight 标记的 cell-group */
+.tight :deep(.van-cell) {
+  padding-top: 3px;
+  padding-bottom: 3px;
+  line-height: 1.3;
+}
+.tight :deep(.van-cell__title),
+.tight :deep(.van-cell__value) {
+  font-size: 13px;
+}
+.tight :deep(.van-cell-group__title) {
+  padding: 10px 16px 4px;
+  font-size: 13px;
+}
 .actions {
   display: flex;
   justify-content: flex-end;
@@ -489,3 +535,13 @@ function goRefundDetail() {
   color: #969799;
 }
 </style>
+
+
+
+
+
+
+
+
+
+
