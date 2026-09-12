@@ -200,6 +200,10 @@ function goReview(item: { productId: number; productTitle: string }) {
   })
 }
 
+function goProduct(productId: number) {
+  router.push({ name: 'product-detail', params: { id: String(productId) } })
+}
+
 function goRefundDetail() {
   if (!order.value?.refund) return
   router.push({ name: 'refund-detail', query: { id: order.value.refund.id } })
@@ -242,6 +246,8 @@ function goRefundDetail() {
               :thumb="it.productCover"
               :num="`×${it.quantity}`"
               :price="it.price"
+              clickable
+              @click="goProduct(it.productId)"
             />
             <div v-if="myReviewForProduct(it.productId)" class="my-review">
               <div class="my-review-head">
