@@ -7,6 +7,7 @@ import {
   REFUND_STATUS_LABELS,
   type RefundDetail
 } from '../api/refund'
+import { errorMessage } from '../api/request'
 
 const route = useRoute()
 const router = useRouter()
@@ -24,7 +25,7 @@ async function load() {
   try {
     detail.value = await getMyRefund(id)
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '加载失败'
+    const msg = errorMessage(e, '加载失败')
     showToast(msg)
   } finally {
     loading.value = false

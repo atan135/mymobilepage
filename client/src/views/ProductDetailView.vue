@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import { getProduct, type Product } from '../api/product'
 import { useCartStore } from '../stores/cart'
+import { errorMessage } from '../api/request'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,7 +18,7 @@ async function load(id: number) {
   try {
     product.value = await getProduct(id)
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '加载失败'
+    const msg = errorMessage(e, '加载失败')
     showToast(msg)
     router.replace('/home')
   } finally {

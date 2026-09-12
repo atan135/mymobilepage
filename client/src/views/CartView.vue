@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { showToast, showConfirmDialog } from 'vant'
 import { getProduct, type Product } from '../api/product'
 import { useCartStore } from '../stores/cart'
+import { errorMessage } from '../api/request'
 
 const router = useRouter()
 const cart = useCartStore()
@@ -29,7 +30,7 @@ async function hydrate() {
       selected: it.selected
     }))
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '加载购物车失败'
+    const msg = errorMessage(e, '加载购物车失败')
     showToast(msg)
   } finally {
     loading.value = false

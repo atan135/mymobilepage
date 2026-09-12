@@ -3,6 +3,7 @@ import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { showToast } from 'vant'
 import { useUserStore } from '../stores/user'
+import { errorMessage } from '../api/request'
 
 const route = useRoute()
 const router = useRouter()
@@ -23,7 +24,7 @@ async function onSubmit() {
     const redirect = (route.query.redirect as string) || '/home'
     router.replace(redirect)
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '登录失败'
+    const msg = errorMessage(e, '登录失败')
     showToast(msg)
   } finally {
     submitting.value = false

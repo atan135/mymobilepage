@@ -9,6 +9,7 @@ import {
   type OrderDetail
 } from '../api/order'
 import { createRefund } from '../api/refund'
+import { errorMessage } from '../api/request'
 
 const route = useRoute()
 const router = useRouter()
@@ -139,7 +140,7 @@ async function submitRefund() {
     refundVisible.value = false
     await load()
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '提交失败'
+    const msg = errorMessage(e, '提交失败')
     showToast(msg)
   } finally {
     acting.value = false

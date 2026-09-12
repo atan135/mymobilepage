@@ -8,6 +8,7 @@ import {
   type RefundRequest,
   type RefundStatus
 } from '../api/refund'
+import { errorMessage } from '../api/request'
 
 const router = useRouter()
 const loading = ref(false)
@@ -45,7 +46,7 @@ async function load(reset = true) {
     total.value = r.total
     if (!r.hasMore) finished.value = true
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '加载失败'
+    const msg = errorMessage(e, '加载失败')
     showToast(msg)
   } finally {
     loading.value = false

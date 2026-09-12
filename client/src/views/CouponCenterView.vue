@@ -9,6 +9,7 @@ import {
   type AvailableCoupon,
   type UserCoupon
 } from '../api/coupon'
+import { errorMessage } from '../api/request'
 
 const loading = ref(false)
 const available = ref<AvailableCoupon[]>([])
@@ -45,7 +46,7 @@ async function loadAvailable() {
   try {
     available.value = await listAvailableCoupons()
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '加载失败'
+    const msg = errorMessage(e, '加载失败')
     showToast(msg)
   } finally {
     loading.value = false
@@ -69,7 +70,7 @@ async function loadMine(reset = true) {
     mineFilter.total = r.total
     if (!r.hasMore) mineFilter.finished = true
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '加载失败'
+    const msg = errorMessage(e, '加载失败')
     showToast(msg)
   } finally {
     loading.value = false
@@ -92,7 +93,7 @@ async function onClaim(c: AvailableCoupon) {
     showToast(`已领取「${c.name}」`)
     await loadAvailable()
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '领取失败'
+    const msg = errorMessage(e, '领取失败')
     showToast(msg)
   }
 }

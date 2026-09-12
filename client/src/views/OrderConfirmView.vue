@@ -14,6 +14,7 @@ import {
   previewCoupon,
   type UserCoupon
 } from '../api/coupon'
+import { errorMessage } from '../api/request'
 
 const route = useRoute()
 const router = useRouter()
@@ -112,7 +113,7 @@ async function refreshPreview() {
     discountAmount.value = Number(r.discountAmount)
   } catch (e: unknown) {
     if (seq !== previewSeq) return
-    const msg = e instanceof Error ? e.message : '优惠券不可用'
+    const msg = errorMessage(e, '优惠券不可用')
     showToast(msg)
     selectedCouponId.value = null
     selectedCouponName.value = ''
@@ -182,7 +183,7 @@ async function onSubmit() {
     showToast({ type: 'success', message: '下单成功' })
     router.replace({ name: 'order-success', query: { id: order.id } })
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '下单失败'
+    const msg = errorMessage(e, '下单失败')
     showToast(msg)
   } finally {
     submitting.value = false

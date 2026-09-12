@@ -7,6 +7,7 @@ import {
   cancelOrder,
   type OrderListItem
 } from '../api/order'
+import { errorMessage } from '../api/request'
 
 const router = useRouter()
 
@@ -88,7 +89,7 @@ async function onCancel(row: OrderListItem) {
     showToast('已取消')
     load()
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '取消失败'
+    const msg = errorMessage(e, '取消失败')
     showToast(msg)
   }
 }

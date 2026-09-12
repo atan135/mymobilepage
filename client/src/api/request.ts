@@ -23,4 +23,20 @@ export const request = ofetch.create({
   }
 })
 
-
+/**
+ * 从 ofetch 的 FetchError 中提取可读 message，给 toast / 表单提示用。
+ *
+ * 背景：ofetch 抛出的 FetchError.message 是「[METHOD] `url`: 400 Bad Request」一长串，
+ * 直接 showToast 给用户看不懂。NestJS 的 4xx 响应 body 形如
+ *   { statusCode, message, error, path, timestamp }
+ * 真正的中文错误在 .data.message 里。
+ *
+ * 优先级：data.message → Error.message → fallback。
+ */
+export function errorMessage(e: unknown, fallback: string): string {
+  const anyE = e as { data?: { message?: unknown }; message?: unknown }
+  const fromData = anyE?.data?.message
+  if (typeof fromData === 'string' && fromData.trim()) return fromData
+  if (e instanceof Error && e.message) return e.message
+  return fallback
+}
