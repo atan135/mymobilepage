@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { showActionSheet, showToast } from 'vant'
+import { showToast } from 'vant'
+import type { ActionSheetAction } from 'vant'
 import {
   getProduct,
   type Product
@@ -77,6 +78,8 @@ const selectedCouponName = ref('')
 const discountAmount = ref(0)
 const availableCoupons = ref<UserCoupon[]>([])
 const couponLoading = ref(false)
+const showCouponSheet = ref(false)
+const couponSheetActions = ref<ActionSheetAction[]>([])
 let previewSeq = 0
 
 async function loadAvailableCoupons() {
@@ -122,31 +125,26 @@ watch(selectedCouponId, refreshPreview)
 
 async function onPickCoupon() {
   if (availableCoupons.value.length === 0) await loadAvailableCoupons()
-  const actions = [
-    ...availableCoupons.value.map((uc) => ({
+  couponSheetActions.value = [
+    ...availableCoupons.value.map<ActionSheetAction>((uc) => ({
       name: `${uc.coupon.name}（${formatCouponLabel(uc)}）`,
       subname: uc.expiresAt ? `至 ${new Date(uc.expiresAt).toLocaleDateString()} 过期` : ''
     })),
     { name: '不使用优惠券' }
   ]
-  try {
-    const idx = await showActionSheet({
-      title: '选择优惠券',
-      actions,
-      cancelText: '取消'
-    })
-    if (typeof idx !== 'number') return
-    if (idx === availableCoupons.value.length) {
-      selectedCouponId.value = null
-      selectedCouponName.value = ''
-    } else {
-      const uc = availableCoupons.value[idx]
-      selectedCouponId.value = uc.id
-      selectedCouponName.value = uc.coupon.name
-    }
-  } catch {
-    /* cancelled */
+  showCouponSheet.value = true
+}
+
+function onCouponSelect(_action: ActionSheetAction, index: number) {
+  showCouponSheet.value = false
+  if (index === availableCoupons.value.length) {
+    selectedCouponId.value = null
+    selectedCouponName.value = ''
+    return
   }
+  const uc = availableCoupons.value[index]
+  selectedCouponId.value = uc.id
+  selectedCouponName.value = uc.coupon.name
 }
 
 function formatCouponLabel(uc: UserCoupon): string {
@@ -277,6 +275,15 @@ onMounted(loadAvailableCoupons)
       :loading="submitting"
       @submit="onSubmit"
       safe-area-inset-bottom
+    />
+
+    <van-action-sheet
+      v-model:show="showCouponSheet"
+      :actions="couponSheetActions"
+      title="选择优惠券"
+      cancel-text="取消"
+      close-on-click-action
+      @select="onCouponSelect"
     />
   </div>
 </template>
