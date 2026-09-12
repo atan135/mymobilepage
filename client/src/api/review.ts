@@ -39,6 +39,29 @@ export interface CanReviewResponse {
   items: CanReviewItem[]
 }
 
+export interface ReviewUserBrief {
+  id: number
+  username: string
+  nickname: string | null
+}
+
+export interface PublicReviewItem extends ReviewItem {
+  user?: ReviewUserBrief
+}
+
+export interface ProductReviewSummary {
+  average: number
+  total: number
+}
+
+export interface ProductReviewsResponse {
+  summary: ProductReviewSummary
+  list: PublicReviewItem[]
+  page: number
+  pageSize: number
+  hasMore: boolean
+}
+
 export interface PaginatedReviews {
   list: ReviewItem[]
   total: number
@@ -63,6 +86,16 @@ export function listMyReviews(params: {
   pageSize?: number
 } = {}) {
   return request<PaginatedReviews>('/reviews/my', { query: params })
+}
+
+export function listProductReviews(
+  productId: number,
+  params: { page?: number; pageSize?: number } = {}
+) {
+  return request<ProductReviewsResponse>(
+    `/products/${productId}/reviews`,
+    { query: params }
+  )
 }
 
 export function getCanReview(orderId: number) {

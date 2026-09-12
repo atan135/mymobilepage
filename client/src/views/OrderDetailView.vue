@@ -9,7 +9,12 @@ import {
   type OrderDetail
 } from '../api/order'
 import { createRefund } from '../api/refund'
-import { getCanReview, type CanReviewResponse } from '../api/review'
+import {
+  getCanReview,
+  listMyReviews,
+  type CanReviewResponse,
+  type ReviewItem
+} from '../api/review'
 import { errorMessage } from '../api/request'
 
 const route = useRoute()
@@ -18,6 +23,7 @@ const order = ref<OrderDetail | null>(null)
 const loading = ref(false)
 const acting = ref(false)
 const canReview = ref<CanReviewResponse | null>(null)
+const myReviews = ref<ReviewItem[]>([])
 
 const STATUS_LABELS: Record<number, string> = {
   0: '待付款',
@@ -58,8 +64,17 @@ async function load() {
       } catch {
         canReview.value = null
       }
+      try {
+        const r = await listMyReviews({ pageSize: 50 })
+        myReviews.value = r.list.filter(
+          (rv) => rv.orderId === order.value!.id
+        )
+      } catch {
+        myReviews.value = []
+      }
     } else {
       canReview.value = null
+      myReviews.value = []
     }
   } finally {
     loading.value = false
@@ -166,6 +181,14 @@ function itemCanReview(productId: number): boolean {
   )
 }
 
+function myReviewForProduct(productId: number): ReviewItem | undefined {
+  return myReviews.value.find((rv) => rv.productId === productId)
+}
+
+function stars(n: number): string {
+  return '★★★★★☆☆☆☆☆'.slice(5 - n, 10 - n)
+}
+
 function goReview(item: { productId: number; productTitle: string }) {
   if (!order.value) return
   router.push({
@@ -213,14 +236,35 @@ function goRefundDetail() {
         </van-cell-group>
 
         <van-cell-group inset title="商品列表" class="block">
-          <van-card
-            v-for="it in order.items"
-            :key="it.id"
-            :title="it.productTitle"
-            :thumb="it.productCover"
-            :num="`×${it.quantity}`"
-            :price="it.price"
-          />
+          <template v-for="it in order.items" :key="it.id">
+            <van-card
+              :title="it.productTitle"
+              :thumb="it.productCover"
+              :num="`×${it.quantity}`"
+              :price="it.price"
+            />
+            <div v-if="myReviewForProduct(it.productId)" class="my-review">
+              <div class="my-review-head">
+                <span class="my-review-label">你的评价</span>
+                <span class="my-review-stars">
+                  {{ stars(myReviewForProduct(it.productId)!.rating) }}
+                </span>
+                <span class="my-review-status" :class="`status-${myReviewForProduct(it.productId)!.status}`">
+                  {{ ['', '已通过', '已屏蔽'][myReviewForProduct(it.productId)!.status] }}
+                </span>
+              </div>
+              <div class="my-review-content">
+                {{ myReviewForProduct(it.productId)!.content }}
+              </div>
+              <div v-if="myReviewForProduct(it.productId)!.reply" class="my-review-reply">
+                <span class="reply-label">商家回复：</span>
+                {{ myReviewForProduct(it.productId)!.reply }}
+              </div>
+              <div v-else-if="myReviewForProduct(it.productId)!.status === 1" class="my-review-pending">
+                商家尚未回复
+              </div>
+            </div>
+          </template>
         </van-cell-group>
 
         <van-cell-group inset title="支付 / 物流" class="block">
@@ -374,5 +418,68 @@ function goRefundDetail() {
   color: #969799;
   padding: 0 16px 8px;
   margin: 0;
+}
+.my-review {
+  padding: 8px 16px 12px;
+  border-top: 1px dashed #ebedf0;
+  background: #fafbfc;
+}
+.my-review-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #606266;
+}
+.my-review-label {
+  color: #1989fa;
+  font-weight: 500;
+}
+.my-review-stars {
+  color: #f7ba2e;
+  letter-spacing: 1px;
+}
+.my-review-status {
+  margin-left: auto;
+  font-size: 12px;
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+.status-0 {
+  color: #f7ba2e;
+  background: #fff5e6;
+}
+.status-1 {
+  color: #67c23a;
+  background: #e6f7e6;
+}
+.status-2 {
+  color: #909399;
+  background: #f0f1f2;
+}
+.my-review-content {
+  margin-top: 6px;
+  font-size: 14px;
+  color: #303133;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.my-review-reply {
+  margin-top: 8px;
+  padding: 8px;
+  background: #f0f9eb;
+  border-left: 3px solid #67c23a;
+  font-size: 13px;
+  color: #303133;
+  border-radius: 2px;
+}
+.reply-label {
+  color: #67c23a;
+  font-weight: 500;
+}
+.my-review-pending {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #969799;
 }
 </style>

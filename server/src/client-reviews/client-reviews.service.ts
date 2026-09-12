@@ -96,6 +96,53 @@ export class ClientReviewsService {
   }
 
   /**
+   * 公开接口：按商品分页查询已通过评价（status=1）+ 平均分聚合。
+   * 商品详情页底部展示区使用。
+   */
+  async listByProduct(
+    productId: number,
+    page: number,
+    pageSize: number
+  ): Promise<{
+    summary: { average: number; total: number }
+    list: unknown[]
+    page: number
+    pageSize: number
+    hasMore: boolean
+  }> {
+    const where: Prisma.ReviewWhereInput = { productId, status: 1 }
+
+    const [agg, total, list] = await this.prisma.$transaction([
+      this.prisma.review.aggregate({
+        where,
+        _avg: { rating: true },
+        _count: { _all: true }
+      }),
+      this.prisma.review.count({ where }),
+      this.prisma.review.findMany({
+        where,
+        orderBy: [{ id: 'desc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: {
+          user: { select: { id: true, username: true, nickname: true } }
+        }
+      })
+    ])
+
+    return {
+      summary: {
+        average: agg._avg.rating ? Number(agg._avg.rating.toFixed(2)) : 0,
+        total: agg._count._all
+      },
+      list: list.map((r) => ({ ...r, images: r.images ?? [] })),
+      page,
+      pageSize,
+      hasMore: page * pageSize < total
+    }
+  }
+
+  /**
    * 订单内「商品 x 是否可评价」便捷接口。
    * OrderDetailView 渲染「评价」按钮前调用。
    */
