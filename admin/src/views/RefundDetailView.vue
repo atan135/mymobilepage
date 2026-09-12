@@ -12,6 +12,10 @@ import {
   type AdminRefundDetail
 } from '../api/admin-refunds'
 
+// 退款关联订单里的商品行类型；模板里 `(row as OrderItem)` 用于在 IDE 里拿到字段提示，
+// 比在模板里塞 `extends infer` 条件类型更稳（Vue 模板只解析 JS 表达式，不识别 TS 条件类型）。
+type OrderItem = NonNullable<AdminRefundDetail['order']>['items'][number]
+
 const route = useRoute()
 const router = useRouter()
 
@@ -142,7 +146,7 @@ async function submitReject() {
             <el-table-column label="封面" width="72">
               <template #default="{ row }">
                 <el-image
-                  :src="(row as AdminRefundDetail['order'] extends infer O ? O extends { items: Array<infer I> } ? I : never : never)['productCover']"
+                  :src="(row as OrderItem).productCover"
                   style="width: 56px; height: 56px; border-radius: 4px"
                   fit="cover"
                 />
@@ -150,22 +154,22 @@ async function submitReject() {
             </el-table-column>
             <el-table-column label="商品" min-width="160" show-overflow-tooltip>
               <template #default="{ row }">
-                {{ (row as AdminRefundDetail['order'] extends infer O ? O extends { items: Array<infer I> } ? I : never : never)['productTitle'] }}
+                {{ (row as OrderItem).productTitle }}
               </template>
             </el-table-column>
             <el-table-column label="单价" width="100">
               <template #default="{ row }">
-                ¥{{ Number((row as any).price).toFixed(2) }}
+                ¥{{ Number((row as OrderItem).price).toFixed(2) }}
               </template>
             </el-table-column>
             <el-table-column label="数量" width="70">
               <template #default="{ row }">
-                {{ (row as any).quantity }}
+                {{ (row as OrderItem).quantity }}
               </template>
             </el-table-column>
             <el-table-column label="小计" width="100">
               <template #default="{ row }">
-                ¥{{ (Number((row as any).price) * (row as any).quantity).toFixed(2) }}
+                ¥{{ (Number((row as OrderItem).price) * (row as OrderItem).quantity).toFixed(2) }}
               </template>
             </el-table-column>
           </el-table>

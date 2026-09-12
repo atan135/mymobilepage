@@ -114,7 +114,7 @@ const exporting = ref(false)
 function openExport() {
   exportForm.categoryId = query.categoryId
   exportForm.status = query.status as 0 | 1 | undefined
-  exportForm.keyword = query.keyword
+  exportForm.keyword = query.keyword ?? ''
   exportVisible.value = true
 }
 

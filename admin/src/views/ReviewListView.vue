@@ -100,7 +100,7 @@ const activeRating = computed(() => String(query.rating ?? ''))
 <template>
   <div class="page">
     <el-card>
-      <el-tabs :model-value="activeStatus" @tab-change="(name: string) => { query.status = name === '' ? undefined : (Number(name) as ReviewStatus); onTabChange(); }">
+      <el-tabs :model-value="activeStatus" @tab-change="(name: string | number) => { query.status = name === '' ? undefined : (Number(name) as ReviewStatus); onTabChange(); }">
         <el-tab-pane
           v-for="t in tabs"
           :key="String(t.value ?? '')"
@@ -109,7 +109,7 @@ const activeRating = computed(() => String(query.rating ?? ''))
         />
       </el-tabs>
 
-      <el-tabs :model-value="activeRating" type="card" class="rating-tabs" @tab-change="(name: string) => { query.rating = name === '' ? undefined : (Number(name) as ReviewRating); onRatingTabChange(); }">
+      <el-tabs :model-value="activeRating" type="card" class="rating-tabs" @tab-change="(name: string | number) => { query.rating = name === '' ? undefined : (Number(name) as ReviewRating); onRatingTabChange(); }">
         <el-tab-pane
           v-for="t in ratingTabs"
           :key="String(t.value ?? '')"

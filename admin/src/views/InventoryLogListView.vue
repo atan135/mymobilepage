@@ -117,7 +117,7 @@ const activeType = computed(() => String(query.type ?? ''))
 <template>
   <div class="page">
     <el-card>
-      <el-tabs :model-value="activeType" @tab-change="(name: string) => { query.type = name === '' ? undefined : (Number(name) as InventoryType); onTabChange(); }">
+      <el-tabs :model-value="activeType" @tab-change="(name: string | number) => { query.type = name === '' ? undefined : (Number(name) as InventoryType); onTabChange(); }">
         <el-tab-pane
           v-for="t in tabs"
           :key="String(t.value ?? '')"

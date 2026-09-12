@@ -1,17 +1,21 @@
 import { request } from './request'
-import type { InventoryType, OrderStatus } from './admin-inventory'
+import type { InventoryType } from './admin-inventory'
+import type { OrderStatus } from './admin-orders'
 
 export interface ExportOrdersParams {
   status?: OrderStatus
   keyword?: string
   dateFrom?: string
   dateTo?: string
+  // 兼容下游 `download(path, params, ...)` 的 `Record<string, unknown>` 形参
+  [key: string]: unknown
 }
 
 export interface ExportProductsParams {
   categoryId?: number
   status?: 0 | 1
   keyword?: string
+  [key: string]: unknown
 }
 
 export interface ExportInventoryLogsParams {
@@ -20,6 +24,7 @@ export interface ExportInventoryLogsParams {
   keyword?: string
   dateFrom?: string
   dateTo?: string
+  [key: string]: unknown
 }
 
 /**
@@ -77,4 +82,3 @@ export async function exportProducts(params: ExportProductsParams = {}) {
 export async function exportInventoryLogs(params: ExportInventoryLogsParams = {}) {
   await download('/exports/inventory-logs', params, 'inventory-logs.xlsx')
 }
-

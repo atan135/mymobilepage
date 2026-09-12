@@ -279,7 +279,7 @@ async function submitGrant() {
         </el-table-column>
         <el-table-column label="面值" width="140">
           <template #default="{ row }">
-            {{ formatAmount(row) }}
+            {{ formatAmount(row as AdminCoupon) }}
           </template>
         </el-table-column>
         <el-table-column label="有效期" width="200">
@@ -306,24 +306,24 @@ async function submitGrant() {
         </el-table-column>
         <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
-            <el-button v-permission="'coupon:edit'" link type="primary" @click="openEdit(row)">
+            <el-button v-permission="'coupon:edit'" link type="primary" @click="openEdit(row as AdminCoupon)">
               编辑
             </el-button>
             <el-button
               v-permission="'coupon:on_off'"
               link
               :type="row.status === 1 ? 'warning' : 'success'"
-              @click="toggleStatus(row)"
+              @click="toggleStatus(row as AdminCoupon)"
             >
               {{ row.status === 1 ? '停用' : '启用' }}
             </el-button>
-            <el-button v-permission="'coupon:list'" link type="info" @click="goClaims(row)">
+            <el-button v-permission="'coupon:list'" link type="info" @click="goClaims(row as AdminCoupon)">
               领取明细
             </el-button>
-            <el-button v-permission="'coupon:grant'" link type="primary" @click="openGrant(row)">
+            <el-button v-permission="'coupon:grant'" link type="primary" @click="openGrant(row as AdminCoupon)">
               手动发放
             </el-button>
-            <el-button v-permission="'coupon:delete'" link type="danger" @click="remove(row)">
+            <el-button v-permission="'coupon:delete'" link type="danger" @click="remove(row as AdminCoupon)">
               删除
             </el-button>
           </template>

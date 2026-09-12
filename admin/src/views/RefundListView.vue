@@ -75,7 +75,7 @@ function asRefund(row: unknown): AdminRefundListItem {
 <template>
   <div class="page">
     <el-card>
-      <el-tabs :model-value="String(query.status ?? '')" @tab-change="(name: string) => { query.status = name === '' ? undefined : (Number(name) as RefundStatus); onTabChange(); }">
+      <el-tabs :model-value="String(query.status ?? '')" @tab-change="(name: string | number) => { query.status = name === '' ? undefined : (Number(name) as RefundStatus); onTabChange(); }">
         <el-tab-pane
           v-for="t in tabs"
           :key="String(t.value ?? '')"
