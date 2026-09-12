@@ -97,7 +97,7 @@ function checkout() {
 
 <template>
   <div class="cart">
-    <van-nav-bar title="购物车" fixed />
+    <van-nav-bar title="购物车" left-arrow fixed @click-left="router.back()" />
 
     <div class="content" v-if="!loading">
       <van-empty
