@@ -89,6 +89,7 @@ npm run build:{client,admin,server}
 | 8 | 客户端 mock 注释 | 已清理：`client/src/api/request.ts` 头部 mock 说明块 + 未使用的 `delay()` 导出已删除 |
 | 9 | 客户端登录页底部文案 | 已清理：client/src/views/LoginView.vue 的 .hint div + 对应 .hint CSS 样式已删除 |
 | 10 | 函数式弹窗白板 | Vant 函数 API（showToast / showConfirmDialog）不被 unplugin-vue-components 自动注入样式；main.ts 的全量 vant/lib/index.css 在 HMR 下偶尔丢失样式，导致弹窗容器表现成白板。在 client/src/main.ts 集中显式 import vant/es/toast/style/index、vant/es/dialog/style/index、vant/es/action-sheet/style/index 兜底，新增函数式 API 不用动 view |
+| 11 | 分类页侧边栏点击报错 | Vant 4 <van-sidebar> 的 v-model 是 children 数组下标（useChildren 的 index.value），不是分类主键。把 activeId（分类 id）直接 v-model 上去，点击会把下标当成 categoryId 发请求，点第一个分类时 categoryId=0 会触发 QueryProductDto @Min(1) 校验 400。client/src/views/CategoryView.vue 用 activeIndex computed 在「分类 id」与「侧边栏下标」之间互译，业务侧仍用 activeId |
 
 完整 FAQ：`docs/00-总览与入门/04-开发约定与常见问题.md`。
 
