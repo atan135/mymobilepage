@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   listCategories,
@@ -11,7 +11,23 @@ import {
 const router = useRouter()
 
 const categories = ref<Category[]>([])
-const activeId = ref<number>(1)
+// 真正参与业务筛选的「分类主键」，先置 null，等列表回来再设。
+const activeId = ref<number | null>(null)
+// Vant <van-sidebar> 的 v-model 是 children 数组下标，不是分类主键。
+// 用 computed 在「分类 id」与「侧边栏下标」之间做翻译：
+//   get：当前选中分类在 categories 里的下标，用于高亮
+//   set：用户点击第 N 项时，把下标翻译回真正的 categoryId
+const activeIndex = computed<number>({
+  get: () => {
+    if (activeId.value == null) return 0
+    const idx = categories.value.findIndex((c) => c.id === activeId.value)
+    return idx < 0 ? 0 : idx
+  },
+  set: (idx) => {
+    const c = categories.value[idx]
+    if (c) activeId.value = c.id
+  }
+})
 const products = ref<Product[]>([])
 const loading = ref(false)
 const finished = ref(false)
@@ -31,7 +47,7 @@ async function loadProducts(reset = false) {
   loading.value = true
   try {
     const res = await listProducts({
-      categoryId: activeId.value,
+      categoryId: activeId.value ?? undefined,
       page: page.value,
       pageSize: 10
     })
@@ -47,7 +63,7 @@ watch(activeId, () => loadProducts(true))
 
 onMounted(async () => {
   await loadCategories()
-  await loadProducts(true)
+  // loadCategories 会赋值 activeId，由上面的 watch 触发首次加载，无需再手动调一次
 })
 
 function goDetail(id: number) {
@@ -65,7 +81,7 @@ function onLoad() {
 
     <div class="content">
       <van-sidebar
-        v-model="activeId"
+        v-model="activeIndex"
         class="sidebar"
         active-color="#ee0a24"
       >
