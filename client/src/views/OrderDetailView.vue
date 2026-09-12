@@ -120,8 +120,12 @@ async function submitRefund() {
     showToast('请填写退款原因')
     return
   }
-  if (refundForm.amount <= 0 || refundForm.amount > Number(order.value.totalAmount)) {
-    showToast(`退款金额需在 0 ~ ¥${order.value.totalAmount} 之间`)
+  // van-field onMounted 会把 modelValue 用 String() 包一层再 emit 回来,
+  // 所以 refundForm.amount 这里其实是字符串。统一 Number(...) 再做比较与 toFixed。
+  const orderTotal = Number(order.value.totalAmount)
+  const amount = Number(refundForm.amount)
+  if (!Number.isFinite(amount) || amount <= 0 || amount > orderTotal) {
+    showToast(`退款金额需在 0 ~ ¥${orderTotal.toFixed(2)} 之间`)
     return
   }
   acting.value = true
@@ -129,7 +133,7 @@ async function submitRefund() {
     await createRefund({
       orderId: order.value.id,
       reason: refundForm.reason.trim(),
-      amount: Number(refundForm.amount.toFixed(2))
+      amount: Number(amount.toFixed(2))
     })
     showToast('已提交退款申请')
     refundVisible.value = false
