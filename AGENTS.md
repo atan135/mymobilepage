@@ -73,7 +73,7 @@ npm run build:{client,admin,server}
 
 - `type`：`feat` / `fix` / `docs` / `refactor` / `chore` / `style` / `test`
 - `scope`：`client` / `admin` / `server` / `summary` / `monorepo`
-- 一事一提交：`docs/`、`summary/`、代码、配置默认拆分提交
+- 一事一提交：`docs/`、代码、配置默认拆分提交（`summary/` 不入库，详见 §9）
 
 ## 7. 已知坑位（不要再踩）
 
@@ -114,11 +114,14 @@ npm run build:{client,admin,server}
 ## 9. 禁止事项
 
 - 不要提交 `.env` / `node_modules/` / `dist/` / `*.local`（已被 `.gitignore` 覆盖，但仍需复核）
-- 不要把 `docs/`、`summary/` 改动与代码改动混在同一个 commit
+- 不要把 `docs/` 改动与代码改动混在同一个 commit
 - 不要擅自修改 `server/src/admin-orders/dto/order.dto.ts` 的 `ORDER_TRANSITIONS` 跨级跳
 - 不要擅自删除默认账号或改 seed 密码（除非准备替换为生产配置）
 - 不要重新发明路由前缀 / 权限码命名风格；先查 `docs/10-服务端/04-认证与权限体系.md` 与 `docs/00-总览与入门/04-开发约定与常见问题.md` 第 4 节
 - 不要在没有核对代码的情况下改文档中的事实描述（如权限装饰器、模块注册状态）
+
+
+- 不要主动提交 `summary/` 下的任何文件（已加入 `.gitignore`）：`summary/` 仅作为本地工作笔记 / 草稿 / 临时记录的 scratchpad。需要入库时，由用户明确说明并转移至 `docs/` 下的合适章节后，再走标准 commit 流程。
 
 ## 10. 相关文件位置速查
 
