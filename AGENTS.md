@@ -81,7 +81,7 @@ npm run build:{client,admin,server}
 | --- | --- | --- |
 | 1 | 默认账号 | seed 写死 `admin/admin123`、`operator/admin123`、`alice~eve/user123`，**上线前必改** |
 | 2 | JWT_SECRET | 前台/后台必须用不同 secret，否则 Token 互相通过校验 |
-| 3 | `users` 表无 `status` 字段 | 后台把前台用户改为 status=0 后**仍可登录**（仅运营标记）；生产化阶段需先改 schema |
+| 3 | `users` 表加 `status` 字段 | 迁移 `20260912000322_phase2_add_user_status/` 已落地，默认 `1`；`AuthService.login` 暂未校验禁用态，仅运营标记 |
 | 4 | `DELETE /api/admin/products/:id` | 已挂 `@RequirePermission('product:delete')`，不是无权限 |
 | 5 | APP_GUARD 注册 | `PermissionsGuard` 已通过 `APP_GUARD` provider 全局生效，不要再加 `useGlobalGuards` |
 | 6 | 后台菜单显示 | `admin/src/layouts/AdminLayout.vue` 的 `menuItems` 与路由 `meta.permission` 同步，否则菜单看不到 |
