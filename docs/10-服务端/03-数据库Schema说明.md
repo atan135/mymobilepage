@@ -45,6 +45,7 @@ erDiagram
         string nickname
         string avatar
         string phone
+        int status
         datetime created_at
         datetime updated_at
     }
@@ -164,6 +165,7 @@ erDiagram
 | `nickname` | string? | 可空 |
 | `avatar` | string? | 可空，URL |
 | `phone` | string? | 可空 |
+| `status` | int | `1` 启用 / `0` 禁用，默认 `1`；`AuthService.login` 校验启用态，禁止登录 |
 | `createdAt` / `updatedAt` | datetime | Prisma 自动维护 |
 
 ### `admin_users`（后台管理员）
@@ -300,6 +302,7 @@ export const REFUND_TRANSITIONS: Record<RefundStatus, RefundStatus[]> = {
 | `20260911143048_phase2_settings/` | `phase2_settings` | Phase 2 | 新增 `settings` |
 | `20260912000000_phase2_add_refunded_at/` | `phase2_add_refunded_at` | Phase 2 | `orders` 加 `refunded_at` |
 | `20260912000001_phase2_add_review_order_id/` | `phase2_add_review_order_id` | Phase 2 | `reviews` 加 `order_id` |
+| `20260912000322_phase2_add_user_status/` | `phase2_add_user_status` | Phase 2 | `users` 加 `status` |
 
 迁移命名约定：`<时间戳>_<简述>`，时间戳由 Prisma 自动生成（YYYYMMDDhhmmss）。
 

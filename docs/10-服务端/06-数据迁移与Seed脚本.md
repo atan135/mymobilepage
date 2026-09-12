@@ -42,6 +42,7 @@ npm run prisma:seed
 | `phase2_settings` | `20260911143048` | Phase 2 | 新增 `settings` |
 | `phase2_add_refunded_at` | `20260912000000` | Phase 2 | `orders` 加 `refunded_at` |
 | `phase2_add_review_order_id` | `20260912000001` | Phase 2 | `reviews` 加 `order_id` |
+| `phase2_add_user_status` | `20260912000322` | Phase 2 | `users` 加 `status` |
 
 迁移命名约定：`<时间戳>_<简述>`。Prisma 自动按时间戳升序应用。
 
