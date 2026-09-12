@@ -22,6 +22,12 @@ const listLoading = ref(false)
 const finished = ref(false)
 const page = ref(1)
 
+// 闭包变量，跟 Vant 共享的 listLoading 解耦。
+// Vant 的 <van-list> 在 onMounted + nextTick 会自动 emit 一次 @load，
+// 同时通过 emit("update:loading", true) 把 v-model:loading 设为 true；
+// 如果用 listLoading.value 做并发门，会被 Vant 自己设的 true 误判。
+let isFetchingProducts = false
+
 async function loadBanners() {
   banners.value = await listBanners()
 }
@@ -46,9 +52,10 @@ async function loadCategories() {
 }
 
 // 翻页加载：手动维护 listLoading，确保转圈不会永久卡住。
-// 防并发：调用前若已在加载，直接返回。
+// 并发门用闭包变量 isFetchingProducts，避免和 Vant 自动设的 loading 冲突。
 async function loadProducts() {
-  if (listLoading.value) return
+  if (isFetchingProducts) return
+  isFetchingProducts = true
   listLoading.value = true
   try {
     const res = await listProducts({ page: page.value, pageSize: 10 })
@@ -62,6 +69,7 @@ async function loadProducts() {
     console.error('加载商品失败', e)
   } finally {
     listLoading.value = false
+    isFetchingProducts = false
   }
 }
 
